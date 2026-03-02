@@ -2,12 +2,14 @@ mod car;
 
 use bevy::prelude::*;
 
+use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(CarPlugin)
+        .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, (setup_world, setup))
         .run();
 }
@@ -27,10 +29,8 @@ fn setup_world(
     ));
 
     commands.spawn((
-        Camera3d::default(),
-        // Transform::from_xyz(10., 10., 10.).looking_at(Vec3::ZERO, Vec3::Y),
-        Transform::from_xyz(20., 20., 20.).looking_at(Vec3::ZERO, Vec3::Y),
-        // Transform::from_xyz(40., 40., 40.).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(Vec3::new(10.0, 10.0, 10.0)),
+        PanOrbitCamera::default(),
     ));
 
     commands.spawn((

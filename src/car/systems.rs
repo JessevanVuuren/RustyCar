@@ -3,10 +3,14 @@ use bevy::{ecs::relationship::Relationship, prelude::*};
 use crate::car::components::{Car, Wheel, WheelPosition};
 
 const DRIVE_SPEED: f32 = 1.0;
-const CAR_DAMP: f32 = 0.99;
+
+const MAX_SPEED_FORWARD: f32 = 50.0;
+const MAX_SPEED_BACKWARD: f32 = 10.0;
+
+const SPEED_DAMP: f32 = 0.99;
+const STEER_DAMP: f32 = 0.14;
 
 const STEER_ANGLE: f32 = 0.5;
-const STEER_SPEED: f32 = 0.1;
 
 pub fn car_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Car>) {
     for mut car in query.iter_mut() {
@@ -19,9 +23,11 @@ pub fn car_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Car>
 
         if keyboard.pressed(KeyCode::KeyW) {
             car.velocity += DRIVE_SPEED;
+            car.direction = 1.0;
         }
         if keyboard.pressed(KeyCode::KeyS) {
             car.velocity -= DRIVE_SPEED;
+            car.direction = -1.0;
         }
     }
 }
@@ -38,10 +44,13 @@ pub fn car_physics(time: Res<Time>, mut query: Query<(&mut Transform, &mut Car)>
         transform.translation += direction * car.velocity * dt;
         transform.rotation = Quat::from_rotation_y(-car.actual + 1.5707963268);
 
-        let steer_speed = dt * STEER_SPEED * car.velocity.length();
-        car.actual = car.actual.lerp(car.target, steer_speed);
+        let diff = car.target - car.actual;
+        let norm_steer = (car.velocity.abs() / MAX_SPEED_FORWARD).clamp(0.0, 1.0);
 
-        car.velocity *= CAR_DAMP;
+        car.actual += diff * norm_steer * STEER_DAMP;
+
+        car.velocity *= SPEED_DAMP;
+        car.velocity = car.velocity.clamp(-MAX_SPEED_BACKWARD, MAX_SPEED_FORWARD)
     }
 }
 
@@ -55,6 +64,8 @@ pub fn wheel_steering(
     for (mut transform, mut wheel, parent) in wheels.iter_mut() {
         let car = cars.get(parent.get()).unwrap();
 
+        wheel.spin += car.velocity * dt;
+
         if matches!(
             wheel.position,
             WheelPosition::FrontLeft | WheelPosition::FrontRight
@@ -62,7 +73,11 @@ pub fn wheel_steering(
             let diff = car.target - car.actual;
             wheel.current = wheel.current.lerp(-diff, dt * 8.);
 
-            transform.rotation = Quat::from_rotation_y(wheel.current) * wheel.offset.rotation;
+            transform.rotation = Quat::from_rotation_y(wheel.current)
+                * Quat::from_rotation_x(wheel.spin)
+                * wheel.offset.rotation;
+        } else {
+            transform.rotation = Quat::from_rotation_x(wheel.spin) * wheel.offset.rotation;
         }
     }
 }

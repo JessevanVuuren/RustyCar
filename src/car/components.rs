@@ -4,6 +4,7 @@ use bevy::prelude::*;
 pub struct Wheel {
     pub position: WheelPosition,
     pub offset: Transform,
+    pub spin: f32,
     pub current: f32,
 }
 
@@ -18,7 +19,8 @@ pub enum WheelPosition {
 
 #[derive(Component, Default)]
 pub struct Car {
-    pub velocity: Vec3,
+    pub direction: f32,
+    pub velocity: f32,
     pub target: f32,
     pub actual: f32,
 }
