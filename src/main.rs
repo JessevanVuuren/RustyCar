@@ -1,4 +1,5 @@
 mod car;
+mod utils;
 
 use bevy::prelude::*;
 
@@ -10,7 +11,8 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(CarPlugin)
         .add_plugins(PanOrbitCameraPlugin)
-        .add_systems(Startup, (setup_world, setup))
+        .add_systems(Startup, setup_world)
+        .add_systems(Startup, setup_car)
         .run();
 }
 
@@ -43,6 +45,6 @@ fn setup_world(
     ));
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_car(&mut commands, &asset_server);
 }
