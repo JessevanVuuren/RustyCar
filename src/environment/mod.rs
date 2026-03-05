@@ -2,10 +2,13 @@ pub mod components;
 pub mod spawn;
 pub mod systems;
 
+use std::f32::consts::PI;
+
 use bevy::prelude::*;
+use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
 use crate::environment::{
-    components::{Env, Nature},
+    components::{Model, Nature, World},
     spawn::spawn_environment,
 };
 
@@ -20,35 +23,80 @@ impl Plugin for EnvironmentPlugin {
 const GROUND_SIZE: f32 = 19.9;
 
 fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let mut world: Vec<Env> = vec![
-        Env {
+    let nature_models: Vec<Model> = vec![
+        Model {
             name: "rock_0".into(),
             nature: Nature::Rock,
-            ..Default::default()
         },
-        Env {
+        Model {
             name: "rock_1".into(),
             nature: Nature::Rock,
-            ..Default::default()
+        },
+        Model {
+            name: "rock_2".into(),
+            nature: Nature::Rock,
+        },
+        Model {
+            name: "rock_3".into(),
+            nature: Nature::Rock,
+        },
+        Model {
+            name: "rock_4".into(),
+            nature: Nature::Rock,
+        },
+        Model {
+            name: "rock_5".into(),
+            nature: Nature::Rock,
+        },
+        Model {
+            name: "log".into(),
+            nature: Nature::Log,
         },
     ];
 
+    let mut world = randomize_objects(&nature_models, 100, 100, 25_000);
     place_ground_plane(&mut world, 100, 100);
 
     spawn_environment(&mut commands, &asset_server, world);
 }
 
-fn place_ground_plane(world: &mut Vec<Env>, x_size: u8, z_size: u8) {
-    let offset = x_size as f32 * GROUND_SIZE / 2.0 - (GROUND_SIZE / 2.0);
+fn randomize_objects(nature: &Vec<Model>, x_size: u8, z_size: u8, objects: u32) -> Vec<World> {
+    let x_offset = x_size as f32 * GROUND_SIZE;
+    let z_offset = z_size as f32 * GROUND_SIZE;
+    let mut rng = SmallRng::seed_from_u64(1604);
+
+    let mut world: Vec<World> = Vec::new();
+
+    for _ in 0..objects {
+        let nature_object = nature[rng.random_range(0..nature.len())].clone();
+
+        let x = rng.random_range(-x_offset..x_offset);
+        let z = rng.random_range(-z_offset..z_offset);
+        let y = rng.random_range(-PI..PI);
+
+        world.push(World {
+            model: nature_object,
+            transform: Transform::from_xyz(x, 0.0, z).with_rotation(Quat::from_rotation_y(y)),
+        });
+    }
+
+    world
+}
+
+fn place_ground_plane(world: &mut Vec<World>, x_size: u8, z_size: u8) {
+    let x_offset = x_size as f32 * GROUND_SIZE / 2.0 - (GROUND_SIZE / 2.0);
+    let z_offset = z_size as f32 * GROUND_SIZE / 2.0 - (GROUND_SIZE / 2.0);
 
     for x_index in 0..x_size {
         for z_index in 0..z_size {
-            let x = x_index as f32 * GROUND_SIZE - offset;
-            let z = z_index as f32 * GROUND_SIZE - offset;
+            let x = x_index as f32 * GROUND_SIZE - x_offset;
+            let z = z_index as f32 * GROUND_SIZE - z_offset;
 
-            world.push(Env {
-                name: "ground".into(),
-                nature: Nature::Ground,
+            world.push(World {
+                model: Model {
+                    name: "ground".into(),
+                    nature: Nature::Ground,
+                },
                 transform: Transform::from_xyz(x, 0.0, z),
             });
         }

@@ -1,17 +1,21 @@
 use bevy::prelude::*;
 
-#[derive(Component, Default)]
-pub struct Env {
+#[derive(Component)]
+pub struct World {
     pub transform: Transform,
+    pub model: Model,
+}
+
+#[derive(Clone, Component)]
+pub struct Model {
     pub nature: Nature,
     pub name: String,
 }
 
-#[derive(Component, Default)]
+#[derive(Clone)]
 pub enum Nature {
-    #[default]
-    Empty,
     Rock,
+    Log,
     Tree,
     Ground,
 }

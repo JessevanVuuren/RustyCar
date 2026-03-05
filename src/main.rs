@@ -2,7 +2,9 @@ mod car;
 mod environment;
 
 use bevy::{
-    camera::ScalingMode, dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig}, prelude::*
+    camera::ScalingMode,
+    dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig},
+    prelude::*,
 };
 
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
@@ -54,12 +56,9 @@ fn setup_default(mut commands: Commands) {
         Transform::from_xyz(500., 250., 0.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    // commands.spawn((
-    //     Transform::from_translation(Vec3::new(10.0, 10.0, 10.0)),
-    //     PanOrbitCamera::default(),
-    // ));
-
     let offset = Transform::from_xyz(30.0, 30.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y);
+
+    // commands.spawn((offset, PanOrbitCamera::default()));
 
     commands.spawn((
         MainCamera {
@@ -67,7 +66,9 @@ fn setup_default(mut commands: Commands) {
             current: offset.translation,
         },
         Projection::Orthographic(OrthographicProjection {
-            scaling_mode: ScalingMode::FixedHorizontal { viewport_width: 70.0 },
+            scaling_mode: ScalingMode::FixedHorizontal {
+                viewport_width: 70.0,
+            },
             ..OrthographicProjection::default_3d()
         }),
         Camera3d::default(),
