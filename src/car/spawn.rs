@@ -19,14 +19,14 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
     commands.entity(car).with_children(|parent| {
         parent.spawn((
             CarVisual {
-                offset,
                 roll: 0.0,
-                current_tilt: 0.0,
-                ecalibium: 1.0,
+                equilibrium: 1.0,
                 last_speed: 0.0,
             },
             offset,
-            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car.glb"))),
+            SceneRoot(
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/car.glb")),
+            ),
         ));
     });
 
@@ -49,7 +49,10 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 offset,
             },
             offset,
-            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/wheel.glb"))),
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+            ),
         ));
     });
 
@@ -72,7 +75,10 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 offset,
             },
             offset,
-            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/wheel.glb"))),
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+            ),
         ));
     });
 
@@ -96,7 +102,10 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 offset,
             },
             offset,
-            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/wheel.glb"))),
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+            ),
         ));
     });
 
@@ -120,7 +129,10 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 offset,
             },
             offset,
-            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/wheel.glb"))),
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+            ),
         ));
     });
 

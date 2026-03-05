@@ -51,14 +51,14 @@ pub fn car_tilt(
         let norm = car.velocity / MAX_SPEED_FORWARD;
 
         if car.velocity == MAX_SPEED_FORWARD || car.velocity < visual.last_speed {
-            visual.ecalibium -= PITCH_DECAY * dt;
+            visual.equilibrium -= PITCH_DECAY * dt;
         } else {
-            visual.ecalibium += PITCH_GROW * dt;
+            visual.equilibrium += PITCH_GROW * dt;
         }
-        visual.ecalibium = visual.ecalibium.clamp(0.0, 1.0);
+        visual.equilibrium = visual.equilibrium.clamp(0.0, 1.0);
         visual.last_speed = car.velocity;
 
-        let target_tilt = (-norm * PITCH_MAX) * visual.ecalibium;
+        let target_tilt = (-norm * PITCH_MAX) * visual.equilibrium;
 
         let lean_angle = (car.actual - car.target) * ROLL_SPEED * norm;
         visual.roll = visual.roll.lerp(lean_angle, dt).clamp(-ROLL_MAX, ROLL_MAX);

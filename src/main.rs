@@ -1,49 +1,96 @@
 mod car;
+mod environment;
 
-use bevy::prelude::*;
+use bevy::{
+    camera::ScalingMode, dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig}, prelude::*
+};
 
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
 
+use crate::{car::components::Car, environment::EnvironmentPlugin};
+
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins((
+            DefaultPlugins,
+            FpsOverlayPlugin {
+                config: {
+                    FpsOverlayConfig {
+                        frame_time_graph_config: FrameTimeGraphConfig {
+                            enabled: false,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    }
+                },
+            },
+        ))
         .add_plugins(CarPlugin)
+        .add_plugins(EnvironmentPlugin)
         .add_plugins(PanOrbitCameraPlugin)
-        .add_systems(Startup, setup_world)
+        .add_systems(Startup, setup_default)
         .add_systems(Startup, setup_car)
+        .add_systems(FixedUpdate, camera_follow)
         .run();
 }
 
-fn setup_world(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
+fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
+    spawn_car(&mut commands, &asset_server);
+}
+
+#[derive(Component)]
+struct MainCamera {
+    offset: Transform,
+    current: Vec3,
+}
+fn setup_default(mut commands: Commands) {
     commands.spawn((
         DirectionalLight {
             illuminance: 2_500.,
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(50., 25., 0.).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(500., 250., 0.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    commands.spawn((
-        Transform::from_translation(Vec3::new(10.0, 10.0, 10.0)),
-        PanOrbitCamera::default(),
-    ));
+    // commands.spawn((
+    //     Transform::from_translation(Vec3::new(10.0, 10.0, 10.0)),
+    //     PanOrbitCamera::default(),
+    // ));
+
+    let offset = Transform::from_xyz(30.0, 30.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y);
 
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d {
-            normal: Dir3::Y,
-            half_size: Vec2 { x: 50., y: 50. },
-        })),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::IDENTITY,
+        MainCamera {
+            offset,
+            current: offset.translation,
+        },
+        Projection::Orthographic(OrthographicProjection {
+            scaling_mode: ScalingMode::FixedHorizontal { viewport_width: 70.0 },
+            ..OrthographicProjection::default_3d()
+        }),
+        Camera3d::default(),
+        offset,
     ));
 }
 
-fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
-    spawn_car(&mut commands, &asset_server);
+const CAMERA_SPEED: f32 = 2.0;
+
+fn camera_follow(
+    mut transforms: ParamSet<(
+        Single<&Transform, With<Car>>,
+        Single<(&mut Transform, &mut MainCamera)>,
+    )>,
+    time: Res<Time>,
+) {
+    let dt = time.delta_secs();
+
+    let car_translation = transforms.p0().translation;
+    let (mut transform, mut camera) = transforms.p1().into_inner();
+
+    let target = car_translation + camera.offset.translation;
+    camera.current = camera.current.lerp(target, dt * CAMERA_SPEED);
+
+    transform.translation = camera.current;
 }

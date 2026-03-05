@@ -2,10 +2,8 @@ use bevy::prelude::*;
 
 #[derive(Component, Default)]
 pub struct CarVisual {
-    pub offset: Transform,
-    pub current_tilt: f32,
     pub last_speed: f32,
-    pub ecalibium: f32,
+    pub equilibrium: f32,
     pub roll: f32,
 }
 

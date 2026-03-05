@@ -10,7 +10,7 @@ pub struct CarPlugin;
 impl Plugin for CarPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (car_input, car_physics, wheel_steering, car_tilt).chain(),
         );
     }
