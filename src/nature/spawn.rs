@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::environment::components::World;
+use crate::nature::components::World;
 
 pub fn spawn_environment(
     commands: &mut Commands,

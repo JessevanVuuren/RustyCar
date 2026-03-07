@@ -15,7 +15,7 @@ pub struct Model {
 #[derive(Clone)]
 pub enum Nature {
     Rock,
-    Log,
     Tree,
+    Log,
     Ground,
 }

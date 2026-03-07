@@ -1,13 +1,12 @@
 pub mod components;
 pub mod spawn;
-pub mod systems;
 
 use std::f32::consts::PI;
 
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
-use crate::environment::{
+use crate::nature::{
     components::{Model, Nature, World},
     spawn::spawn_environment,
 };
@@ -49,20 +48,47 @@ fn setup_world(mut commands: Commands, asset_server: Res<AssetServer>) {
             nature: Nature::Rock,
         },
         Model {
+            name: "pine_tree_1".into(),
+            nature: Nature::Tree,
+        },
+        Model {
+            name: "pine_tree_2".into(),
+            nature: Nature::Tree,
+        },
+        Model {
+            name: "pine_tree_3".into(),
+            nature: Nature::Tree,
+        },
+        Model {
+            name: "pine_tree_4".into(),
+            nature: Nature::Tree,
+        },
+        Model {
             name: "log".into(),
+            nature: Nature::Log,
+        },
+        Model {
+            name: "log_1".into(),
+            nature: Nature::Log,
+        },
+        Model {
+            name: "log_2".into(),
+            nature: Nature::Log,
+        },
+        Model {
+            name: "log_3".into(),
             nature: Nature::Log,
         },
     ];
 
-    let mut world = randomize_objects(&nature_models, 100, 100, 25_000);
-    place_ground_plane(&mut world, 100, 100);
-
+    let mut world = randomize_objects(&nature_models, 10, 10, 250);
+    place_ground_plane(&mut world, 10, 10);
     spawn_environment(&mut commands, &asset_server, world);
 }
 
 fn randomize_objects(nature: &Vec<Model>, x_size: u8, z_size: u8, objects: u32) -> Vec<World> {
-    let x_offset = x_size as f32 * GROUND_SIZE;
-    let z_offset = z_size as f32 * GROUND_SIZE;
+    let x_offset = x_size as f32 * GROUND_SIZE / 2.0;
+    let z_offset = z_size as f32 * GROUND_SIZE / 2.0;
     let mut rng = SmallRng::seed_from_u64(1604);
 
     let mut world: Vec<World> = Vec::new();

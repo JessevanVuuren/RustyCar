@@ -1,5 +1,7 @@
+mod building;
 mod car;
-mod environment;
+mod infra;
+mod nature;
 
 use bevy::{
     camera::ScalingMode,
@@ -10,7 +12,9 @@ use bevy::{
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
 
-use crate::{car::components::Car, environment::EnvironmentPlugin};
+use crate::{
+    building::BuildingPlugin, car::components::Car, infra::InfraPlugin, nature::EnvironmentPlugin,
+};
 
 fn main() {
     App::new()
@@ -29,6 +33,8 @@ fn main() {
             },
         ))
         .add_plugins(CarPlugin)
+        .add_plugins(InfraPlugin)
+        .add_plugins(BuildingPlugin)
         .add_plugins(EnvironmentPlugin)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_default)
@@ -58,7 +64,14 @@ fn setup_default(mut commands: Commands) {
 
     let offset = Transform::from_xyz(30.0, 30.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y);
 
-    // commands.spawn((offset, PanOrbitCamera::default()));
+    // commands.spawn((
+    //     MainCamera {
+    //         offset,
+    //         current: offset.translation,
+    //     },
+    //     offset,
+    //     PanOrbitCamera::default(),
+    // ));
 
     commands.spawn((
         MainCamera {
