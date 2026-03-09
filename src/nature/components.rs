@@ -19,3 +19,11 @@ pub enum Nature {
     Log,
     Ground,
 }
+
+
+#[derive(Component)]
+pub struct Infra {
+    pub transform: Transform,
+    pub name: String,
+    pub path: String,
+}

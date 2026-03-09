@@ -2,6 +2,7 @@ mod building;
 mod car;
 mod infra;
 mod nature;
+mod world;
 
 use bevy::{
     camera::ScalingMode,
@@ -14,6 +15,7 @@ use car::{CarPlugin, spawn::spawn_car};
 
 use crate::{
     building::BuildingPlugin, car::components::Car, infra::InfraPlugin, nature::EnvironmentPlugin,
+    world::WorldPlugin,
 };
 
 fn main() {
@@ -32,13 +34,13 @@ fn main() {
                 },
             },
         ))
-        .add_plugins(CarPlugin)
-        .add_plugins(InfraPlugin)
-        .add_plugins(BuildingPlugin)
-        .add_plugins(EnvironmentPlugin)
+        // .add_plugins(InfraPlugin)
+        // .add_plugins(EnvironmentPlugin)
+        // .add_plugins(CarPlugin)
+        .add_plugins(WorldPlugin)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_default)
-        .add_systems(Startup, setup_car)
+        // .add_systems(Startup, setup_car)
         .add_systems(FixedUpdate, camera_follow)
         .run();
 }
@@ -59,34 +61,34 @@ fn setup_default(mut commands: Commands) {
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(500., 250., 0.).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(1., 1., 1.).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     let offset = Transform::from_xyz(30.0, 30.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y);
+
+    commands.spawn((
+        // MainCamera {
+        //     offset,
+        //     current: offset.translation,
+        // },
+        offset,
+        PanOrbitCamera::default(),
+    ));
 
     // commands.spawn((
     //     MainCamera {
     //         offset,
     //         current: offset.translation,
     //     },
+    //     Projection::Orthographic(OrthographicProjection {
+    //         scaling_mode: ScalingMode::FixedHorizontal {
+    //             viewport_width: 70.0,
+    //         },
+    //         ..OrthographicProjection::default_3d()
+    //     }),
+    //     Camera3d::default(),
     //     offset,
-    //     PanOrbitCamera::default(),
     // ));
-
-    commands.spawn((
-        MainCamera {
-            offset,
-            current: offset.translation,
-        },
-        Projection::Orthographic(OrthographicProjection {
-            scaling_mode: ScalingMode::FixedHorizontal {
-                viewport_width: 70.0,
-            },
-            ..OrthographicProjection::default_3d()
-        }),
-        Camera3d::default(),
-        offset,
-    ));
 }
 
 const CAMERA_SPEED: f32 = 2.0;
