@@ -3,32 +3,38 @@ use std::{collections::HashMap, ops::Sub};
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
 
-#[derive(Component, Copy, Clone, PartialEq, Eq, Hash, Default)]
-pub struct TilePos {
-    pub x: i32,
-    pub z: i32,
+const TILE_SIZE: f32 = 4.0;
+
+#[derive(Resource, Clone, Debug)]
+pub struct StaticWorld {
+    pub blocks: Vec<WorldBlock>,
 }
 
-#[derive(Component)]
-pub struct Tree;
+#[derive(Clone, Debug)]
+pub struct WorldBlock {
+    pub objects: Vec<Model>,
+    pub start: TilePos,
+    pub stop: TilePos,
+}
 
-#[derive(Component)]
-pub struct Rock;
+#[derive(Clone, Debug)]
+pub struct Model {
+    pub name: String,
+    pub comp: Comp,
+    pub amount: u8,
+    pub range: u8,
+}
 
-#[derive(Component)]
-pub struct Log;
-
-#[derive(Component)]
-pub struct Flower;
-
-#[derive(Component, Clone, Copy)]
-pub struct Ground;
-
-#[derive(Component)]
-pub struct Dirt;
-
-#[derive(Component)]
-pub struct Fence;
+#[derive(Component, Clone, Debug)]
+pub enum Comp {
+    Flower,
+    Grass,
+    Fence,
+    Tree,
+    Rock,
+    Dirt,
+    Log,
+}
 
 #[derive(Resource, Default)]
 pub struct TileWorld {
@@ -36,9 +42,17 @@ pub struct TileWorld {
     pub object: HashMap<TilePos, Vec<Entity>>,
 }
 
-const TILE_SIZE: f32 = 4.0;
+#[derive(Component, Copy, Clone, PartialEq, Eq, Hash, Default, Debug)]
+pub struct TilePos {
+    pub x: i32,
+    pub z: i32,
+}
 
 impl TilePos {
+    pub fn new(x: i32, z: i32) -> Self {
+        Self { x, z }
+    }
+
     pub fn to_world_transform(self) -> Transform {
         return Transform::from_xyz(
             (self.x as f32 * TILE_SIZE) as f32,

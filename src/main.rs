@@ -1,4 +1,3 @@
-mod building;
 mod car;
 mod world;
 
@@ -11,9 +10,28 @@ use bevy::{
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
 
-use crate::{car::components::Car, world::WorldPlugin};
+use crate::{
+    car::components::Car,
+    world::{
+        WorldPlugin,
+        components::{Comp, Model, StaticWorld, TilePos, WorldBlock},
+    },
+};
 
 fn main() {
+    let static_world = StaticWorld {
+        blocks: vec![WorldBlock {
+            objects: vec![Model {
+                amount: 1,
+                range: 1,
+                comp: Comp::Grass,
+                name: "dirt".into(),
+            }],
+            start: TilePos::new(0, 0),
+            stop: TilePos::new(1, 1),
+        }],
+    };
+
     App::new()
         .add_plugins((
             DefaultPlugins,
@@ -30,7 +48,7 @@ fn main() {
             },
         ))
         // .add_plugins(CarPlugin)
-        .add_plugins(WorldPlugin)
+        .add_plugins(WorldPlugin { static_world })
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_default)
         // .add_systems(Startup, setup_car)

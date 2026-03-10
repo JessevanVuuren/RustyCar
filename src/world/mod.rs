@@ -4,16 +4,20 @@ pub mod utils;
 
 use bevy::prelude::*;
 
-use crate::world::{components::TileWorld, spawn::{generate_fencing, generate_flowers, generate_ground}};
+use crate::world::{
+    components::{StaticWorld, TileWorld},
+    spawn::init_static_world,
+};
 
-pub struct WorldPlugin;
+pub struct WorldPlugin {
+    pub static_world: StaticWorld,
+}
 
 impl Plugin for WorldPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<TileWorld>();
-        app.add_systems(
-            Startup,
-            ((generate_ground, generate_fencing), generate_flowers).chain(),
-        );
+
+        app.insert_resource(self.static_world.clone())
+            .add_systems(Startup, init_static_world);
     }
 }
