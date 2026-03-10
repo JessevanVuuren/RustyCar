@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Sub};
 
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
@@ -31,13 +31,12 @@ pub struct Dirt;
 pub struct Fence;
 
 #[derive(Resource, Default)]
-pub struct TileMap {
+pub struct TileWorld {
     pub ground: HashMap<TilePos, Entity>,
     pub object: HashMap<TilePos, Vec<Entity>>,
 }
 
-const TILE_SIZE: f32 = 3.99634;
-// const TILE_SIZE: f32 = 3.99634 * 1.02;
+const TILE_SIZE: f32 = 4.0;
 
 impl TilePos {
     pub fn to_world_transform(self) -> Transform {
@@ -63,6 +62,17 @@ impl TilePos {
         TilePos {
             x: (transform.translation.x / TILE_SIZE) as i32,
             z: (transform.translation.z / TILE_SIZE) as i32,
+        }
+    }
+}
+
+impl Sub<i32> for TilePos {
+    type Output = Self;
+
+    fn sub(self, other: i32) -> Self {
+        Self {
+            x: self.x - other,
+            z: self.z - other,
         }
     }
 }

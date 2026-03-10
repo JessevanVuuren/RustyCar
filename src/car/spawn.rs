@@ -25,7 +25,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
             },
             offset,
             SceneRoot(
-                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/car.glb")),
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/car.glb")),
             ),
         ));
     });
@@ -51,7 +51,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
             offset,
             SceneRoot(
                 asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -77,7 +77,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
             offset,
             SceneRoot(
                 asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -104,7 +104,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
             offset,
             SceneRoot(
                 asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -131,7 +131,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
             offset,
             SceneRoot(
                 asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/purple_car/wheel.glb")),
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
