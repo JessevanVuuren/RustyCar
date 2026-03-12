@@ -1,4 +1,8 @@
-use std::{collections::HashMap, ops::Sub};
+use std::{
+    collections::{HashMap, HashSet},
+    default,
+    ops::{Add, Sub},
+};
 
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
@@ -13,20 +17,74 @@ pub struct StaticWorld {
 #[derive(Clone, Debug)]
 pub struct WorldBlock {
     pub objects: Vec<Model>,
-    pub start: TilePos,
-    pub stop: TilePos,
+    pub surface: Vec<Surface>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
+pub struct Surface {
+    pub positive: Range<TilePos>,
+    pub negative: Range<TilePos>,
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct Model {
-    pub name: String,
+    pub placement: Placement,
+    pub tile_type: TileType,
+    pub path: String,
+    pub range: Range<i32>,
     pub comp: Comp,
-    pub amount: u8,
-    pub range: u8,
 }
 
-#[derive(Component, Clone, Debug)]
+#[derive(Clone, Debug, Default)]
+pub enum Range<T> {
+    Range(T, T),
+    One(T),
+    #[default]
+    None,
+}
+#[derive(Clone, Debug, Default)]
+pub enum TileType {
+    #[default]
+    Object,
+    Ground,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct Placement {
+    pub rotation: Rotation,
+    pub amount: Value<i32>,
+    pub offset: Offset,
+    pub scale: Value<f32>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub enum Offset {
+    Fixed(Vec3),
+    Random,
+    #[default]
+    Zero,
+}
+
+#[derive(Clone, Debug, Default)]
+pub enum Rotation {
+    Random(f32, f32),
+    Amount(f32, Dir3),
+    RandomDirection,
+    #[default]
+    True,
+}
+
+#[derive(Clone, Debug, Default)]
+pub enum Value<T> {
+    Random(T, T),
+    Amount(T),
+    #[default]
+    True,
+}
+
+#[derive(Component, Clone, Debug, Default)]
 pub enum Comp {
+    Mushroom,
     Flower,
     Grass,
     Fence,
@@ -34,6 +92,8 @@ pub enum Comp {
     Rock,
     Dirt,
     Log,
+    #[default]
+    None,
 }
 
 #[derive(Resource, Default)]
@@ -78,6 +138,35 @@ impl TilePos {
             z: (transform.translation.z / TILE_SIZE) as i32,
         }
     }
+
+    pub fn row_major(self, other: TilePos) -> impl Iterator<Item = TilePos> {
+        (self.z..=other.z).flat_map(move |z| (self.x..=other.x).map(move |x| TilePos { x, z }))
+    }
+
+    pub fn column_major(self, other: TilePos) -> impl Iterator<Item = TilePos> {
+        (self.x..=other.x).flat_map(move |x| (self.z..=other.z).map(move |z| TilePos { x, z }))
+    }
+
+    pub fn random_tile_offset(rng: &mut SmallRng) -> Vec3 {
+        let half = TILE_SIZE / 2.0;
+        Vec3 {
+            x: rng.random_range(-half..half),
+            y: 0.0,
+            z: rng.random_range(-half..half),
+        }
+    }
+
+    pub fn subtract_range(
+        positive: impl Iterator<Item = TilePos>,
+        negative: impl Iterator<Item = TilePos>,
+    ) -> impl Iterator<Item = TilePos> {
+        let positive: Vec<TilePos> = positive.collect();
+        let negative: HashSet<TilePos> = negative.collect();
+
+        positive
+            .into_iter()
+            .filter(move |tile| !negative.contains(tile))
+    }
 }
 
 impl Sub<i32> for TilePos {
@@ -87,6 +176,39 @@ impl Sub<i32> for TilePos {
         Self {
             x: self.x - other,
             z: self.z - other,
+        }
+    }
+}
+
+impl Sub for TilePos {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self {
+        Self {
+            x: self.x - other.x,
+            z: self.z - other.z,
+        }
+    }
+}
+
+impl Add<i32> for TilePos {
+    type Output = Self;
+
+    fn add(self, other: i32) -> Self {
+        Self {
+            x: self.x + other,
+            z: self.z + other,
+        }
+    }
+}
+
+impl Add for TilePos {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self {
+            x: self.x + other.x,
+            z: self.z + other.z,
         }
     }
 }
