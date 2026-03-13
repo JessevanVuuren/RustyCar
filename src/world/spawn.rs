@@ -1,8 +1,12 @@
-use crate::world::components::{
-    Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos, TileType, TileWorld, Value,
+use crate::world::{
+    components::{
+        Comp, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos,
+        TileType, TileWorld, Value,
+    },
+    grass::{grass_plane},
 };
 use bevy::prelude::*;
-use rand::{RngExt, SeedableRng, rngs::SmallRng, seq::IteratorRandom};
+use rand::{RngExt, SeedableRng, rngs::SmallRng};
 use std::{f32::consts::FRAC_PI_2, iter};
 
 const BASE: &str = "models/";
@@ -12,6 +16,8 @@ pub fn init_static_world(
     static_world: Res<StaticWorld>,
     mut world: ResMut<TileWorld>,
     assets: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let mut rng = SmallRng::seed_from_u64(1604);
 
@@ -44,7 +50,17 @@ pub fn init_static_world(
 
                             let comp = object.comp.clone();
 
-                            let id = spawn_object(comp, &transform, &path, &mut commands, &assets);
+                            let id = match comp {
+                                Comp::Grass(config) => spawn_grass(
+                                    config,
+                                    &transform,
+                                    &mut commands,
+                                    &mut meshes,
+                                    &mut materials,
+                                ),
+                                _ => spawn_object(comp, &transform, &path, &mut commands, &assets),
+                            };
+
                             add_to_world_map(tile, &object.tile_type, &mut world, id)
                         }
                     }
@@ -77,6 +93,24 @@ fn add_to_world_map(key: TilePos, tile_type: &TileType, world: &mut TileWorld, i
             world.ground.insert(key, id);
         }
     };
+}
+
+fn spawn_grass(
+    config: GrassConfig,
+    transform: &Transform,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+) -> Entity {
+    let grass = grass_plane(transform.translation, 0, 4.0, config);
+
+    commands
+        .spawn((
+            Mesh3d(meshes.add(grass)),
+            MeshMaterial3d(materials.add(Color::WHITE)),
+            transform.clone(),
+        ))
+        .id()
 }
 
 fn spawn_object<T: Component>(
@@ -114,6 +148,7 @@ fn apply_transformations(rng: &mut SmallRng, transform: &mut Transform, placemen
         }
         Rotation::RandomDirection => {
             let angle = rng.random_range(0..=3);
+
             transform.rotation *= Quat::from_rotation_y(angle as f32 * FRAC_PI_2);
         }
         Rotation::True => {}

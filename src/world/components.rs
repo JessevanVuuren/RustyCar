@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, HashSet},
-    default,
     ops::{Add, Sub},
 };
 
@@ -86,7 +85,7 @@ pub enum Value<T> {
 pub enum Comp {
     Mushroom,
     Flower,
-    Grass,
+    Grass(GrassConfig),
     Fence,
     Tree,
     Rock,
@@ -94,6 +93,20 @@ pub enum Comp {
     Log,
     #[default]
     None,
+}
+
+#[derive(Clone, Debug)]
+pub struct GrassConfig {
+    pub color: Noise<Color>,
+    pub height: Noise<f32>,
+    pub colors: Vec<Color>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Noise<T> {
+    pub scale: f32,
+    pub val1: T,
+    pub val2: T,
 }
 
 #[derive(Resource, Default)]

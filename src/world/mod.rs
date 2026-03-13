@@ -1,6 +1,8 @@
 pub mod components;
 pub mod spawn;
 pub mod utils;
+pub mod grass;
+
 
 use bevy::prelude::*;
 
