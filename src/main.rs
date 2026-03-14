@@ -19,7 +19,7 @@ use crate::{
         components::{GrassConfig, Noise},
         grass::grass_plane,
     },
-    world_config::{grass_test, test_world},
+    world_config::{test_world},
 };
 
 fn main() {
@@ -69,7 +69,7 @@ fn spawn_grass(
 ) {
     let grass = grass_plane(
         Vec3::ZERO,
-        4,
+        3,
         4.0,
         GrassConfig {
             color: {
@@ -132,7 +132,7 @@ fn setup_camera(mut commands: Commands) {
     //     },
     //     Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::new(-1.0, -0.7, -0.6), Vec3::Y),
     // ));
-    // commands.insert_resource(ClearColor(Color::srgb(0.6, 0.8, 1.0)));
+    commands.insert_resource(ClearColor(Color::srgb(0.6, 0.8, 1.0)));
 
     commands.spawn((offset, PanOrbitCamera { focus, ..default() }));
 

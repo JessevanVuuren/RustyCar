@@ -10,40 +10,6 @@ use crate::world::{
     utils::{DOWN, LEFT, RIGHT, UP},
 };
 
-pub fn grass_test() -> StaticWorld {
-    // let jungle_start = TilePos::new(1, 1);
-    // let jungle_stop = TilePos::new(11, 11);
-    StaticWorld { blocks: vec![] }
-    // StaticWorld {
-    //     blocks: vec![
-    //         //welcome to the jungle
-    //         WorldBlock {
-    //             objects: vec![Model {
-    //                 range: Range::None,
-    //                 comp: Comp::Grass(
-    //                     Noise {
-    //                         scale: 1.1,
-    //                         val1: Color::linear_rgb(0.0, 0.69, 0.22),
-    //                         val2: Color::linear_rgb(0.624, 1.0, 0.745),
-    //                     },
-    //                     Noise {
-    //                         scale: 1.0,
-    //                         val1: 0.0,
-    //                         val2: 0.0,
-    //                     },
-    //                 ),
-    //                 path: "ground/grass".into(),
-    //                 tile_type: TileType::Ground,
-    //                 ..Default::default()
-    //             }],
-    //             surface: vec![Surface {
-    //                 positive: Range::Range(jungle_start, jungle_stop),
-    //                 ..Default::default()
-    //             }],
-    //         },
-    //     ],
-    // }
-}
 
 pub fn test_world() -> StaticWorld {
     let jungle_start = TilePos::new(1, 1);

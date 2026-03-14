@@ -28,7 +28,9 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
 
     let n_triangles = 2 * (4 as u32).pow(subdivision);
     let n_points = n_triangles as usize * 3;
-    let resolution = 2u32.pow(subdivision);
+
+    let sub_quads = 2u32.pow(subdivision);
+    let resolution = sub_quads + 1;
 
     let mut positions: Vec<[f32; 3]> = Vec::with_capacity(n_points);
     let mut colors: Vec<[f32; 4]> = Vec::with_capacity(n_points);
@@ -36,10 +38,14 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
 
     let mut rng = SmallRng::seed_from_u64(1604);
 
+    let height_map: Vec<_> = (0..2u32.pow(resolution))
+        .map(|_| rng.random_range(0.0..0.5))
+        .collect();
+
     let mut i = 0;
-    for z in 0..resolution {
-        for x in 0..resolution {
-            let step = size / resolution as f32;
+    for z in 0..sub_quads {
+        for x in 0..sub_quads {
+            let step = size / sub_quads as f32;
             let half = size / 2.0;
 
             let x0 = step * x as f32 - half;
@@ -48,27 +54,34 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
             let z0 = step * z as f32 - half;
             let z1 = step * (z + 1) as f32 - half;
 
-            positions.push([x0, 0.0, z0]);
-            positions.push([x0, 0.0, z1]);
-            positions.push([x1, 0.0, z0]);
+            let base_1 = (z * resolution + x) as usize;
+            let base_2 = ((z + 1) * resolution + x) as usize;
 
-            positions.push([x1, 0.0, z0]);
-            positions.push([x0, 0.0, z1]);
-            positions.push([x1, 0.0, z1]);
+            positions.push([x0, height_map[base_1 + 0], z0]);
+            positions.push([x0, height_map[base_2 + 0], z1]);
+            positions.push([x1, height_map[base_1 + 1], z0]);
 
-            let color_index = rng.random_range(0..config.colors.len());
-            let color_scale = config.colors[color_index].to_linear();
+            positions.push([x1, height_map[base_1 + 1], z0]);
+            positions.push([x0, height_map[base_2 + 0], z1]);
+            positions.push([x1, height_map[base_2 + 1], z1]);
 
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
+            // let color_index = rng.random_range(0..config.colors.len());
+            // let color_scale = config.colors[color_index].to_linear();
 
-            let color_index = rng.random_range(0..config.colors.len());
-            let color_scale = config.colors[color_index].to_linear();
+            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
+            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
+            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
 
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
+            // let color_index = rng.random_range(0..config.colors.len());
+            // let color_scale = config.colors[color_index].to_linear();
+
+            colors.push([1.0, 1.0, 1.0, 1.0]);
+            colors.push([1.0, 1.0, 1.0, 1.0]);
+            colors.push([1.0, 1.0, 1.0, 1.0]);
+
+            colors.push([0.0, 0.0, 0.0, 1.0]);
+            colors.push([0.0, 0.0, 0.0, 1.0]);
+            colors.push([0.0, 0.0, 0.0, 1.0]);
 
             indices.push(i + 0);
             indices.push(i + 1);
