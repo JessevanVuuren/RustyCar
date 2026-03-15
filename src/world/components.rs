@@ -104,9 +104,15 @@ pub struct GrassConfig {
 
 #[derive(Clone, Debug)]
 pub struct Noise<T> {
-    pub scale: f32,
-    pub val1: T,
-    pub val2: T,
+    pub octaves: Vec<NoiseLevel>,
+    pub value_1: T,
+    pub value_2: T,
+}
+
+#[derive(Clone, Debug)]
+pub struct NoiseLevel {
+    pub frequency: f32,
+    pub amplitude: f32,
 }
 
 #[derive(Resource, Default)]

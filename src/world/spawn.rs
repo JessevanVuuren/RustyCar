@@ -52,6 +52,7 @@ pub fn init_static_world(
 
                             let id = match comp {
                                 Comp::Grass(config) => spawn_grass(
+                                    &mut rng,
                                     config,
                                     &transform,
                                     &mut commands,
@@ -96,13 +97,14 @@ fn add_to_world_map(key: TilePos, tile_type: &TileType, world: &mut TileWorld, i
 }
 
 fn spawn_grass(
+    rng: &mut SmallRng,
     config: GrassConfig,
     transform: &Transform,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) -> Entity {
-    let grass = grass_plane(transform.translation, 0, 4.0, config);
+    let grass = grass_plane(rng, transform.translation, 4, 4.0, config);
 
     commands
         .spawn((

@@ -1,12 +1,16 @@
 use bevy::{
     asset::RenderAssetUsages,
+    math::VectorSpace,
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
 
-use crate::{extra::noise::perlin_2d, world::components::GrassConfig};
+use crate::{
+    extra::noise::perlin_2d,
+    world::components::{GrassConfig, Noise},
+};
 
 fn rgb_lerp(c1: Color, c2: Color, t: f32) -> LinearRgba {
     let a = c1.to_linear();
@@ -20,7 +24,30 @@ fn rgb_lerp(c1: Color, c2: Color, t: f32) -> LinearRgba {
     .to_linear()
 }
 
-pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfig) -> Mesh {
+fn linear_to_rgba(rgb: LinearRgba) -> [f32; 4] {
+    [rgb.red, rgb.green, rgb.blue, 1.0]
+}
+
+fn rgba_to_linear(rgb: LinearRgba) -> [f32; 4] {
+    [rgb.red, rgb.green, rgb.blue, 1.0]
+}
+
+fn color_mix(a: LinearRgba, b: LinearRgba, t: f32) -> LinearRgba {
+    Color::linear_rgb(
+        a.red + (b.red - a.red) * t,
+        a.green + (b.green - a.green) * t,
+        a.blue + (b.blue - a.blue) * t,
+    )
+    .to_linear()
+}
+
+pub fn grass_plane(
+    rng: &mut SmallRng,
+    offset: Vec3,
+    subdivision: u32,
+    size: f32,
+    config: GrassConfig,
+) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),
@@ -32,21 +59,21 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
     let sub_quads = 2u32.pow(subdivision);
     let resolution = sub_quads + 1;
 
+    let step = size / sub_quads as f32;
+
+    let color_map = noise_map(sub_quads, &config.color, step, offset);
+    let height_map = noise_map(resolution, &config.height, step, offset);
+
     let mut positions: Vec<[f32; 3]> = Vec::with_capacity(n_points);
     let mut colors: Vec<[f32; 4]> = Vec::with_capacity(n_points);
     let mut indices: Vec<u32> = Vec::with_capacity(n_points);
 
-    let mut rng = SmallRng::seed_from_u64(1604);
-
-    let height_map: Vec<_> = (0..2u32.pow(resolution))
-        .map(|_| rng.random_range(0.0..0.5))
-        .collect();
-
-    let mut i = 0;
     for z in 0..sub_quads {
         for x in 0..sub_quads {
-            let step = size / sub_quads as f32;
             let half = size / 2.0;
+            let step = size / sub_quads as f32;
+
+            let index = (z * sub_quads + x) as usize;
 
             let x0 = step * x as f32 - half;
             let x1 = step * (x + 1) as f32 - half;
@@ -57,40 +84,47 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
             let base_1 = (z * resolution + x) as usize;
             let base_2 = ((z + 1) * resolution + x) as usize;
 
-            positions.push([x0, height_map[base_1 + 0], z0]);
-            positions.push([x0, height_map[base_2 + 0], z1]);
-            positions.push([x1, height_map[base_1 + 1], z0]);
+            let height = &config.height;
+            let color = &config.color;
+            let r_colors = &config.colors;
+            // height
 
-            positions.push([x1, height_map[base_1 + 1], z0]);
-            positions.push([x0, height_map[base_2 + 0], z1]);
-            positions.push([x1, height_map[base_2 + 1], z1]);
+            let top_left = (height_map[base_1 + 0] + height.value_1) * height.value_2;
+            let bot_left = (height_map[base_2 + 0] + height.value_1) * height.value_2;
 
-            // let color_index = rng.random_range(0..config.colors.len());
-            // let color_scale = config.colors[color_index].to_linear();
+            let top_right = (height_map[base_1 + 1] + height.value_1) * height.value_2;
+            let bot_right = (height_map[base_2 + 1] + height.value_1) * height.value_2;
 
-            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
-            // colors.push([color_scale.red, color_scale.green, color_scale.blue, 1.0]);
+            positions.push([x0, top_left, z0]);
+            positions.push([x0, bot_left, z1]);
+            positions.push([x1, top_right, z0]);
 
-            // let color_index = rng.random_range(0..config.colors.len());
-            // let color_scale = config.colors[color_index].to_linear();
+            positions.push([x1, top_right, z0]);
+            positions.push([x0, bot_left, z1]);
+            positions.push([x1, bot_right, z1]);
 
-            colors.push([1.0, 1.0, 1.0, 1.0]);
-            colors.push([1.0, 1.0, 1.0, 1.0]);
-            colors.push([1.0, 1.0, 1.0, 1.0]);
+            // color
+            let color_index = rng.random_range(0..r_colors.len());
+            let random_color = r_colors[color_index].to_linear();
 
-            colors.push([0.0, 0.0, 0.0, 1.0]);
-            colors.push([0.0, 0.0, 0.0, 1.0]);
-            colors.push([0.0, 0.0, 0.0, 1.0]);
+            let noise_color = rgb_lerp(color.value_1, color.value_2, color_map[index]);
+            let color = color_mix(random_color, noise_color, 0.5);
 
-            indices.push(i + 0);
-            indices.push(i + 1);
-            indices.push(i + 2);
+            colors.push(linear_to_rgba(color));
+            colors.push(linear_to_rgba(color));
+            colors.push(linear_to_rgba(color));
 
-            indices.push(i + 3);
-            indices.push(i + 4);
-            indices.push(i + 5);
-            i += 6;
+            colors.push(linear_to_rgba(color));
+            colors.push(linear_to_rgba(color));
+            colors.push(linear_to_rgba(color));
+
+            indices.push((index * 6 + 0) as u32);
+            indices.push((index * 6 + 1) as u32);
+            indices.push((index * 6 + 2) as u32);
+
+            indices.push((index * 6 + 3) as u32);
+            indices.push((index * 6 + 4) as u32);
+            indices.push((index * 6 + 5) as u32);
         }
     }
 
@@ -98,7 +132,30 @@ pub fn grass_plane(offset: Vec3, subdivision: u32, size: f32, config: GrassConfi
     mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     mesh.insert_indices(Indices::U32(indices));
 
-    mesh.compute_normals();
+    mesh.duplicate_vertices();
+    mesh.compute_flat_normals();
 
     mesh
+}
+
+fn noise_map<T>(size: u32, noise: &Noise<T>, step: f32, offset: Vec3) -> Vec<f32> {
+    (0..size * size)
+        .map(|i| {
+            let x = step * (i % size) as f32 + offset.x;
+            let z = step * (i / size) as f32 + offset.z;
+
+            let mut value = 0.0;
+            let mut max = 0.0;
+
+            for octave in &noise.octaves {
+                let noise = perlin_2d(x * octave.frequency, z * octave.frequency);
+                value += noise * octave.amplitude;
+                max += octave.amplitude;
+            }
+
+            value /= max;
+
+            ((value + 1.0) / 2.0).clamp(0.0, 1.0)
+        })
+        .collect()
 }

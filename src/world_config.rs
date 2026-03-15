@@ -4,12 +4,86 @@ use bevy::prelude::*;
 
 use crate::world::{
     components::{
-        Comp, GrassConfig, Model, Noise, Offset, Placement, Range, Rotation, StaticWorld, Surface,
-        TilePos, TileType, Value, WorldBlock,
+        Comp, GrassConfig, Model, Noise, NoiseLevel, Offset, Placement, Range, Rotation,
+        StaticWorld, Surface, TilePos, TileType, Value, WorldBlock,
     },
     utils::{DOWN, LEFT, RIGHT, UP},
 };
 
+pub fn grass_test() -> StaticWorld {
+    let jungle_start = TilePos::new(1, 1);
+    let jungle_stop = TilePos::new(20, 20);
+
+    let dirt_start = TilePos::new(22, 1);
+    let dirt_stop = TilePos::new(42, 20);
+
+    StaticWorld {
+        blocks: vec![
+            WorldBlock {
+                objects: vec![Model {
+                    range: Range::None,
+                    comp: Comp::Grass(GrassConfig {
+                        color: Noise {
+                            octaves: vec![
+                                NoiseLevel {
+                                    frequency: 0.01,
+                                    amplitude: 1.0,
+                                }
+                            ],
+                            value_1: Color::linear_rgb(0.0, 0.69, 0.22),
+                            value_2: Color::linear_rgb(0.624, 1.0, 0.745),
+                        },
+                        height: Noise {
+                            octaves: vec![
+                                NoiseLevel {
+                                    frequency: 0.1,
+                                    amplitude: 1.0,
+                                },
+                                NoiseLevel {
+                                    frequency: 5.6,
+                                    amplitude: 0.2,
+                                },
+                            ],
+                            value_1: 0.0,
+                            value_2: 0.5,
+                        },
+
+                        colors: vec![
+                            Color::linear_rgb(0.125, 0.545, 0.227),
+                            Color::linear_rgb(0.145, 0.635, 0.267),
+                            Color::linear_rgb(0.176, 0.776, 0.325),
+                            Color::linear_rgb(0.29, 0.839, 0.427),
+                        ],
+                    }),
+                    path: "ground/grass".into(),
+                    tile_type: TileType::Ground,
+                    ..Default::default()
+                }],
+                surface: vec![Surface {
+                    positive: Range::Range(jungle_start, jungle_stop),
+                    ..default()
+                }],
+            },
+            WorldBlock {
+                objects: vec![Model {
+                    range: Range::None,
+                    comp: Comp::Dirt,
+                    path: "ground/grass".into(),
+                    tile_type: TileType::Ground,
+                    placement: Placement {
+                        rotation: Rotation::RandomDirection,
+                        ..default()
+                    },
+                    ..Default::default()
+                }],
+                surface: vec![Surface {
+                    positive: Range::Range(dirt_start, dirt_stop),
+                    ..default()
+                }],
+            },
+        ],
+    }
+}
 
 pub fn test_world() -> StaticWorld {
     let jungle_start = TilePos::new(1, 1);
@@ -28,42 +102,42 @@ pub fn test_world() -> StaticWorld {
     StaticWorld {
         blocks: vec![
             //welcome to the jungle
-            WorldBlock {
-                objects: vec![Model {
-                    range: Range::None,
-                    comp: Comp::Grass(GrassConfig {
-                        color: {
-                            Noise {
-                                scale: 40.0,
-                                val1: Color::linear_rgb(0.0, 0.69, 0.22),
-                                val2: Color::linear_rgb(0.624, 1.0, 0.745),
-                            }
-                        },
-                        height: {
-                            Noise {
-                                scale: 0.1,
-                                val1: 0.0,
-                                val2: 0.05,
-                            }
-                        },
-                        colors: vec![
-                            Color::linear_rgb(1.0, 1.0, 1.0),
-                            Color::linear_rgb(0.0, 0.0, 0.0),
-                            // Color::linear_rgb(0.125, 0.545, 0.227),
-                            // Color::linear_rgb(0.145, 0.635, 0.267),
-                            // Color::linear_rgb(0.176, 0.776, 0.325),
-                            // Color::linear_rgb(0.29, 0.839, 0.427),
-                        ],
-                    }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
-                    ..Default::default()
-                }],
-                surface: vec![Surface {
-                    positive: Range::Range(jungle_start, play_stop),
-                    ..default()
-                }],
-            },
+            // WorldBlock {
+            //     objects: vec![Model {
+            //         range: Range::None,
+            //         comp: Comp::Grass(GrassConfig {
+            //             color: {
+            //                 Noise {
+            //                     scale: 40.0,
+            //                     val1: Color::linear_rgb(0.0, 0.69, 0.22),
+            //                     val2: Color::linear_rgb(0.624, 1.0, 0.745),
+            //                 }
+            //             },
+            //             height: {
+            //                 Noise {
+            //                     scale: 10.1,
+            //                     val1: 0.0,
+            //                     val2: 5.0,
+            //                 }
+            //             },
+            //             colors: vec![
+            //                 Color::linear_rgb(1.0, 1.0, 1.0),
+            //                 Color::linear_rgb(0.0, 0.0, 0.0),
+            //                 // Color::linear_rgb(0.125, 0.545, 0.227),
+            //                 // Color::linear_rgb(0.145, 0.635, 0.267),
+            //                 // Color::linear_rgb(0.176, 0.776, 0.325),
+            //                 // Color::linear_rgb(0.29, 0.839, 0.427),
+            //             ],
+            //         }),
+            //         path: "ground/grass".into(),
+            //         tile_type: TileType::Ground,
+            //         ..Default::default()
+            //     }],
+            //     surface: vec![Surface {
+            //         positive: Range::Range(jungle_start, play_stop),
+            //         ..default()
+            //     }],
+            // },
             WorldBlock {
                 objects: vec![Model {
                     range: Range::Range(1, 8),
