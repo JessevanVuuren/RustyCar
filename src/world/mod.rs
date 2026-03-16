@@ -2,13 +2,13 @@ pub mod components;
 pub mod spawn;
 pub mod utils;
 pub mod grass;
+pub mod patch;
 
 
 use bevy::prelude::*;
 
 use crate::world::{
-    components::{StaticWorld, TileWorld},
-    spawn::init_static_world,
+    components::{StaticWorld, TileWorld}, patch::patch_ground, spawn::init_static_world
 };
 
 pub struct WorldPlugin {
@@ -20,6 +20,7 @@ impl Plugin for WorldPlugin {
         app.init_resource::<TileWorld>();
 
         app.insert_resource(self.static_world.clone())
-            .add_systems(Startup, init_static_world);
+            .add_systems(Startup, init_static_world)
+            .add_systems(Startup, patch_ground);
     }
 }

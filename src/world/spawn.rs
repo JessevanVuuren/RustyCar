@@ -3,7 +3,7 @@ use crate::world::{
         Comp, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos,
         TileType, TileWorld, Value,
     },
-    grass::{grass_plane},
+    grass::{ground_plane},
 };
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
@@ -104,7 +104,7 @@ fn spawn_grass(
     meshes: &mut ResMut<Assets<Mesh>>,
     materials: &mut ResMut<Assets<StandardMaterial>>,
 ) -> Entity {
-    let grass = grass_plane(rng, transform.translation, 4, 4.0, config);
+    let grass = ground_plane(rng, transform.translation, 4, 4.0, config);
 
     commands
         .spawn((

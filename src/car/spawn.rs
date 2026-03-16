@@ -1,7 +1,7 @@
 use super::components::*;
 use bevy::prelude::*;
 
-pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> Entity {
+pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, position: Transform) -> Entity {
     let car = commands
         .spawn((
             Car {
@@ -10,11 +10,9 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 target: 0.0,
                 velocity: 0.0,
             },
-            Transform::default(),
+            position
         ))
         .id();
-
-    let offset = Transform::IDENTITY;
 
     commands.entity(car).with_children(|parent| {
         parent.spawn((
@@ -23,7 +21,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>) -> En
                 equilibrium: 1.0,
                 last_speed: 0.0,
             },
-            offset,
+            Transform::IDENTITY,
             SceneRoot(
                 asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/car.glb")),
             ),

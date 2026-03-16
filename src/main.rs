@@ -1,12 +1,11 @@
+#![allow(unused)]
 mod car;
 mod extra;
 mod world;
 mod world_config;
 
 use bevy::{
-    color::palettes::css::{BLUE, GREEN, RED},
-    dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig},
-    prelude::*,
+    camera::ScalingMode, color::palettes::css::{BLUE, GREEN, RED}, dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig}, prelude::*
 };
 
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
@@ -14,17 +13,13 @@ use car::{CarPlugin, spawn::spawn_car};
 
 use crate::{
     car::components::Car,
-    world::{
-        WorldPlugin,
-        components::{GrassConfig, Noise},
-        grass::grass_plane,
-    },
+    world::WorldPlugin,
     world_config::{grass_test, test_world},
 };
 
 fn main() {
-    // let static_world = test_world();
-    let static_world = grass_test();
+    let static_world = test_world();
+    // let static_world = grass_test();
 
     App::new()
         .add_plugins((
@@ -46,13 +41,14 @@ fn main() {
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_camera)
         .add_systems(Update, xyz_gismos)
-        // .add_systems(Startup, setup_car)
+        .add_systems(Startup, setup_car)
         .add_systems(FixedUpdate, camera_follow)
         .run();
 }
 
 fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
-    spawn_car(&mut commands, &asset_server);
+    let position = Transform::from_xyz(60.0, 0.0, 60.0);
+    spawn_car(&mut commands, &asset_server, position);
 }
 
 #[derive(Component)]
@@ -69,26 +65,21 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
-    // let offset = Transform::from_xyz(30.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
+    // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
 
     let focus = Vec3::new(60.0, 0.0, 60.0);
     let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
 
     commands.spawn((
-        DirectionalLight::default(),
-        Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
+        DirectionalLight {
+            color: Color::srgb(1., 0.95, 0.7),
+            // color: Color::srgb(1.0, 1.0, 1.0),
+            illuminance: 5_000.,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::new(-1.0, -0.7, -0.6), Vec3::Y),
     ));
-
-    // commands.spawn((
-    //     DirectionalLight {
-    //         // color: Color::srgb(1., 0.95, 0.7),
-    //         color: Color::srgb(1.0, 1.0, 1.0),
-    //         illuminance: 2_500.,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::new(-1.0, -0.7, -0.6), Vec3::Y),
-    // ));
     commands.insert_resource(ClearColor(Color::srgb(0.6, 0.8, 1.0)));
 
     commands.spawn((offset, PanOrbitCamera { focus, ..default() }));

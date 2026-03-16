@@ -1,11 +1,10 @@
 use bevy::{
     asset::RenderAssetUsages,
-    math::VectorSpace,
     mesh::{Indices, PrimitiveTopology},
     prelude::*,
 };
 
-use rand::{RngExt, SeedableRng, rngs::SmallRng};
+use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
     extra::noise::perlin_2d,
@@ -41,7 +40,7 @@ fn color_mix(a: LinearRgba, b: LinearRgba, t: f32) -> LinearRgba {
     .to_linear()
 }
 
-pub fn grass_plane(
+pub fn ground_plane(
     rng: &mut SmallRng,
     offset: Vec3,
     subdivision: u32,
@@ -87,8 +86,8 @@ pub fn grass_plane(
             let height = &config.height;
             let color = &config.color;
             let r_colors = &config.colors;
-            // height
 
+            // height
             let top_left = (height_map[base_1 + 0] + height.value_1) * height.value_2;
             let bot_left = (height_map[base_2 + 0] + height.value_1) * height.value_2;
 
