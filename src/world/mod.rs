@@ -20,7 +20,6 @@ impl Plugin for WorldPlugin {
         app.init_resource::<TileWorld>();
 
         app.insert_resource(self.static_world.clone())
-            .add_systems(Startup, init_static_world)
-            .add_systems(Startup, patch_ground);
+            .add_systems(Startup, (init_static_world, patch_ground).chain());
     }
 }

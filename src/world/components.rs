@@ -6,7 +6,7 @@ use std::{
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
 
-const TILE_SIZE: f32 = 4.0;
+pub const TILE_SIZE: f32 = 4.0;
 
 #[derive(Resource, Clone, Debug)]
 pub struct StaticWorld {
@@ -81,6 +81,9 @@ pub enum Value<T> {
     True,
 }
 
+#[derive(Component)]
+pub struct Grass;
+
 #[derive(Component, Clone, Debug, Default)]
 pub enum Comp {
     Mushroom,
@@ -100,6 +103,7 @@ pub struct GrassConfig {
     pub color: Noise<Color>,
     pub height: Noise<f32>,
     pub colors: Vec<Color>,
+    pub subdivisions: u8,
 }
 
 #[derive(Clone, Debug)]
@@ -115,7 +119,7 @@ pub struct NoiseLevel {
     pub amplitude: f32,
 }
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Debug)]
 pub struct TileWorld {
     pub ground: HashMap<TilePos, Entity>,
     pub object: HashMap<TilePos, Vec<Entity>>,

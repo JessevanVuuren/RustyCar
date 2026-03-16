@@ -1,9 +1,8 @@
 use crate::world::{
     components::{
-        Comp, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos,
-        TileType, TileWorld, Value,
+        Comp, Grass, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos, TileType, TileWorld, Value
     },
-    grass::{ground_plane},
+    grass::ground_plane,
 };
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
@@ -108,6 +107,7 @@ fn spawn_grass(
 
     commands
         .spawn((
+            Grass,
             Mesh3d(meshes.add(grass)),
             MeshMaterial3d(materials.add(Color::WHITE)),
             transform.clone(),
