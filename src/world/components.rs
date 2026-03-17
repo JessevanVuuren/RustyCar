@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Sub},
 };
 
-use bevy::prelude::*;
+use bevy::{math::usize, prelude::*};
 use rand::{RngExt, rngs::SmallRng};
 
 pub const TILE_SIZE: f32 = 4.0;
@@ -121,9 +121,17 @@ pub struct NoiseLevel {
 
 #[derive(Resource, Default, Debug)]
 pub struct TileWorld {
-    pub ground: HashMap<TilePos, Entity>,
+    pub ground: HashMap<TilePos, Ground>,
     pub object: HashMap<TilePos, Vec<Entity>>,
 }
+
+#[derive(Clone, Debug)]
+pub struct Ground {
+    pub entity: Entity,
+    pub id: usize,
+}
+
+
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Hash, Default, Debug)]
 pub struct TilePos {

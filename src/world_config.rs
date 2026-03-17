@@ -11,11 +11,12 @@ use crate::world::{
 };
 
 pub fn grass_test() -> StaticWorld {
-    let jungle_start = TilePos::new(1, 1);
-    let jungle_stop = TilePos::new(1, 1);
+    let dirt_start = TilePos::new(2, 2);
+    let dirt_stop = TilePos::new(3, 3);
+    
+    let grass_start = TilePos::new(1, 1);
+    let grass_stop = TilePos::new(4, 4);
 
-    let dirt_start = TilePos::new(2, 1);
-    let dirt_stop = TilePos::new(2, 2);
 
     StaticWorld {
         blocks: vec![
@@ -64,7 +65,7 @@ pub fn grass_test() -> StaticWorld {
                     ..Default::default()
                 }],
                 surface: vec![Surface {
-                    positive: Range::Range(jungle_start, jungle_stop),
+                    positive: Range::Range(dirt_start, dirt_stop),
                     ..default()
                 }],
             },
@@ -94,7 +95,7 @@ pub fn grass_test() -> StaticWorld {
                             value_1: 0.0,
                             value_2: 0.5,
                         },
-subdivisions: 4,
+                        subdivisions: 4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -107,8 +108,8 @@ subdivisions: 4,
                     ..Default::default()
                 }],
                 surface: vec![Surface {
-                    positive: Range::Range(dirt_start, dirt_stop),
-                    ..Default::default()
+                    positive: Range::Range(grass_start, grass_stop),
+                    negative: Range::Range(dirt_start, dirt_stop),
                 }],
             },
         ],

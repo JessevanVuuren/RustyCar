@@ -1,6 +1,7 @@
 use crate::world::{
     components::{
-        Comp, Grass, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld, TilePos, TileType, TileWorld, Value
+        Comp, Grass, GrassConfig, Ground, Model, Offset, Placement, Range, Rotation, StaticWorld,
+        TilePos, TileType, TileWorld, Value,
     },
     grass::ground_plane,
 };
@@ -20,7 +21,7 @@ pub fn init_static_world(
 ) {
     let mut rng = SmallRng::seed_from_u64(1604);
 
-    for block in static_world.blocks.iter() {
+    for (layer_id, block) in static_world.blocks.iter().enumerate() {
         for object in block.objects.iter() {
             for surface in block.surface.iter() {
                 let positive = match surface.positive {
@@ -61,7 +62,7 @@ pub fn init_static_world(
                                 _ => spawn_object(comp, &transform, &path, &mut commands, &assets),
                             };
 
-                            add_to_world_map(tile, &object.tile_type, &mut world, id)
+                            add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
                         }
                     }
                     Value::Amount(amount) => {
@@ -77,7 +78,7 @@ pub fn init_static_world(
 
                             let comp = object.comp.clone();
                             let id = spawn_object(comp, &transform, &path, &mut commands, &assets);
-                            add_to_world_map(tile, &object.tile_type, &mut world, id)
+                            add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
                         }
                     }
                 }
@@ -86,11 +87,23 @@ pub fn init_static_world(
     }
 }
 
-fn add_to_world_map(key: TilePos, tile_type: &TileType, world: &mut TileWorld, id: Entity) {
+fn add_to_world_map(
+    key: TilePos,
+    tile_type: &TileType,
+    world: &mut TileWorld,
+    id: Entity,
+    layer_id: usize,
+) {
     match tile_type {
         TileType::Object => world.object.entry(key).or_default().push(id),
         TileType::Ground => {
-            world.ground.insert(key, id);
+            world.ground.insert(
+                key,
+                Ground {
+                    entity: id,
+                    id: layer_id,
+                },
+            );
         }
     };
 }
