@@ -36,14 +36,17 @@ pub fn patch_ground(
                     let range = TilePos::subtract_range(positive, negative);
 
                     for tile in range {
-                        let mut tile_right = TilePos::new(tile.x + 1, tile.z);
-                        let mut tile_down = TilePos::new(tile.x, tile.z + 1);
+                        let mut tile_cc = TilePos::new(tile.x + 0, tile.z + 0); // center   center
+                        let mut tile_cr = TilePos::new(tile.x + 1, tile.z + 0); // right    center
+                        let mut tile_bc = TilePos::new(tile.x + 0, tile.z + 1); // center   bottom
+                        let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // right    bottom
 
-                        let Some(ground) = world.ground.get(&tile) else {
-                            continue;
-                        };
+                        let ground_cc = world.ground.get(&tile_cc).map_or(-1, |f| f.id); // center center   
+                        let ground_cr = world.ground.get(&tile_cr).map_or(-1, |f| f.id); // center right    
+                        let ground_bc = world.ground.get(&tile_bc).map_or(-1, |f| f.id); // bottom center   
+                        let ground_br = world.ground.get(&tile_br).map_or(-1, |f| f.id); // bottom right    
 
-                        let Some(handle) = mesh_on_tile(&world, tile, &query) else {
+                        let Some(handle) = mesh_on_tile(&world, tile_cc, &query) else {
                             continue;
                         };
 
@@ -51,42 +54,132 @@ pub fn patch_ground(
                             continue;
                         };
 
-                        if let Some(ground_right) = world.ground.get(&tile_right) {
-                            if ground.id != ground_right.id {
-                                if let Some(handle_right) = mesh_on_tile(&world, tile_right, &query)
-                                {
-                                    if let Some(mut pos_right) =
-                                        get_mesh_positions(&meshes, &handle_right)
-                                    {
-                                        blend_tiles1(&mut pos, &pos_right, config.subdivisions);
-                                        blend_tiles2(&mut pos_right, &pos, config.subdivisions);
-
-                                        set_mesh_position(&pos, &handle, &mut meshes);
-                                        set_mesh_position(&pos_right, &handle_right, &mut meshes);
-                                    }
-                                }
-                            }
-                        }
-
-                        if let Some(ground_down) = world.ground.get(&tile_down) {
-                            if ground.id != ground_down.id {
-                                if let Some(handle_down) = mesh_on_tile(&world, tile_down, &query) {
-                                    if let Some(mut pos_down) =
-                                        get_mesh_positions(&meshes, &handle_down)
-                                    {
-                                        blend_tiles3(&mut pos, &pos_down, config.subdivisions);
-                                        blend_tiles4(&mut pos_down, &pos, config.subdivisions);
-
-                                        set_mesh_position(&pos, &handle, &mut meshes);
-                                        set_mesh_position(&pos_down, &handle_down, &mut meshes);
-                                    }
-                                }
-                            }
+                        if let (
+                            Some(mut tile_1),
+                            Some(mut tile_2),
+                            Some(mut tile_3),
+                            Some(mut tile_4),
+                        ) = (
+                            tile_mesh_positions(&world, tile_cc, &query, &meshes),
+                            tile_mesh_positions(&world, tile_cr, &query, &meshes),
+                            tile_mesh_positions(&world, tile_bc, &query, &meshes),
+                            tile_mesh_positions(&world, tile_br, &query, &meshes),
+                        ) {
+                            stitch_tiles(
+                                &mut tile_1.0,
+                                &mut tile_2.0,
+                                &mut tile_3.0,
+                                &mut tile_4.0,
+                            );
+                            set_mesh_position(&tile_1.0, &tile_1.1, &mut meshes);
                         }
                     }
                 }
             }
             _ => (),
+        }
+    }
+}
+
+fn stitch_tiles(
+    tile1: &mut [[f32; 3]],
+    tile2: &mut [[f32; 3]],
+    tile3: &mut [[f32; 3]],
+    tile4: &mut [[f32; 3]],
+) {
+    let sub_quads = 2i32.pow(4.0 as u32);
+
+    let half = sub_quads / 2;
+    let points = half + 1;
+
+    let point = 1.0;
+
+    let height: Vec<f32> = curve_map(points).collect();
+    let height = rotate(&height, points, 2);
+
+    for z in 0..half {
+        for x in 0..half {
+            let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
+
+            let base_1 = (z * points + x) as usize;
+            let base_2 = ((z + 1) * points + x) as usize;
+
+            let top_left = height[base_1 + 0];
+            let bot_left = height[base_2 + 0];
+
+            let top_right = height[base_1 + 1];
+            let bot_right = height[base_2 + 1];
+
+            tile1[i + 0][1] = lerp(top_left, tile1[i + 0][1], point);
+            tile1[i + 1][1] = lerp(bot_left, tile1[i + 1][1], point);
+            tile1[i + 2][1] = lerp(top_right, tile1[i + 2][1], point);
+            tile1[i + 3][1] = lerp(top_right, tile1[i + 3][1], point);
+            tile1[i + 4][1] = lerp(bot_left, tile1[i + 4][1], point);
+            tile1[i + 5][1] = lerp(bot_right, tile1[i + 5][1], point);
+        }
+    }
+}
+
+fn rotate<T: Copy>(array: &[T], size: i32, step: i32) -> Vec<T> {
+    let mut rotated = Vec::with_capacity((size * size) as usize);
+
+    for y in 0..size {
+        for x in 0..size {
+            let i = match step {
+                0 => 0,
+                1 => (size - 1 - x) * size + y,
+                2 => (size - y) * size - 1 - x,
+                3 => (size - 1 - y) + size * x,
+                _ => panic!("Unreachable step: {}", step)
+            };
+            rotated.push(array[i as usize]);
+        }
+    }
+
+    rotated
+}
+
+
+fn relu(v: f32) -> f32 {
+    if v > 0.0 { v } else { 0.0 }
+}
+
+fn ramp_map(size: i32) -> impl Iterator<Item = f32> {
+    (0..size * size)
+        .map(move |i| ((i % size) * (i % size)) as f32 / ((size - 1) * (size - 1)) as f32)
+}
+
+fn curve_map(size: i32) -> impl Iterator<Item = f32> {
+    (0..size * size)
+        .map(move |i| ((i % size) * (i / size)) as f32 / ((size - 1) * (size - 1)) as f32)
+}
+
+fn bend_corner(tile: &mut [[f32; 3]], points: [f32; 3], size: usize) {
+    for z in 0..size {
+        for x in 0..size {
+            if x + z < size - 1 {
+                continue;
+            }
+            let i = (((z + size) * (size * 2) + (x + size)) * 6) as usize;
+
+            let mut scale_z = ((x + z - 2) - 7) as f32 / (14 - 7) as f32;
+            let scale_0 = ((x + z) - 7) as f32 / (14 - 7) as f32;
+
+            if x + z == 7 {
+                scale_z = scale_0;
+            }
+            let mut scale_q = (scale_z + scale_0) / 2.0;
+            if x + z == 8 {
+                scale_z = 0.0;
+                scale_q = 0.0;
+            }
+
+            tile[i + 0][1] = lerp(scale_z, tile[i + 0][1], points[1]);
+            tile[i + 1][1] = lerp(scale_q, tile[i + 1][1], points[1]);
+            tile[i + 2][1] = lerp(scale_q, tile[i + 2][1], points[1]);
+            tile[i + 3][1] = lerp(scale_q, tile[i + 3][1], points[1]);
+            tile[i + 4][1] = lerp(scale_q, tile[i + 4][1], points[1]);
+            tile[i + 5][1] = lerp(scale_0, tile[i + 5][1], points[1]);
         }
     }
 }
@@ -117,143 +210,27 @@ pub fn ease_in_out_circ(x: f32) -> f32 {
 }
 
 fn ease_in_quint(x: f32) -> f32 {
-    let x2 = x * x;
-    let x4 = x2 * x2;
-    let x8 = x4 * x4;
-    let x16 = x8 * x8;
-    x16 * x16
+    x * x
+    // let x2 = x * x;
+    // let x4 = x2 * x2;
+    // let x8 = x4 * x4;
+    // let x16 = x8 * x8;
+    // x16 * x16
 }
 
-fn blend_tiles1(points_1: &mut [[f32; 3]], points_2: &[[f32; 3]], subdivision: u8) {
-    let sub_quads = 2i32.pow(subdivision as u32);
-    let row_step = sub_quads * 6;
-    let skip = 10;
-
-    for z in 0..sub_quads {
-        let y0 = points_1[(z * row_step) as usize][1];
-        let y1 = points_2[((z + 1) * row_step - 3) as usize][1];
-        let mid_point_1 = (y0 + y1) / 2.0;
-
-        let y0 = points_1[(z * row_step + 1) as usize][1];
-        let y1 = points_2[((z + 1) * row_step - 1) as usize][1];
-        let mid_point_2 = (y0 + y1) / 2.0;
-
-        for x in skip..sub_quads {
-            let i = ((z * sub_quads + x) * 6) as usize;
-
-            let scale_1 = (x - skip) as f32 / (sub_quads - skip) as f32;
-            let scale_2 = ((x + 1) - skip) as f32 / (sub_quads - skip) as f32;
-
-            // let scale_1 = ease_in_quint(scale_1);
-            // let scale_2 = ease_in_quint(scale_2);
-
-            points_1[i + 0][1] = lerp(scale_1, points_1[i + 0][1], mid_point_1);
-            points_1[i + 1][1] = lerp(scale_1, points_1[i + 1][1], mid_point_2);
-            points_1[i + 2][1] = lerp(scale_2, points_1[i + 2][1], mid_point_1);
-            points_1[i + 3][1] = lerp(scale_2, points_1[i + 3][1], mid_point_1);
-            points_1[i + 4][1] = lerp(scale_1, points_1[i + 4][1], mid_point_2);
-            points_1[i + 5][1] = lerp(scale_2, points_1[i + 5][1], mid_point_2);
+fn tile_mesh_positions(
+    world: &TileWorld,
+    tile: TilePos,
+    query: &Query<&Mesh3d, With<Grass>>,
+    meshes: &Assets<Mesh>,
+) -> Option<(Vec<[f32; 3]>, Handle<Mesh>)> {
+    if let Some(handle) = mesh_on_tile(&world, tile, &query) {
+        if let Some(mut pos) = get_mesh_positions(&meshes, &handle) {
+            return Some((pos, handle));
         }
     }
-}
 
-fn blend_tiles2(points_1: &mut [[f32; 3]], points_2: &[[f32; 3]], subdivision: u8) {
-    let sub_quads = 2i32.pow(subdivision as u32);
-    let row_step = sub_quads * 6;
-    let skip = 10;
-
-    for z in 0..sub_quads {
-        let y0 = points_2[(z * row_step) as usize][1];
-        let y1 = points_1[((z + 1) * row_step - 3) as usize][1];
-        let mid_point_1 = (y0 + y1) / 2.0;
-
-        let y0 = points_2[(z * row_step + 1) as usize][1];
-        let y1 = points_1[((z + 1) * row_step - 1) as usize][1];
-        let mid_point_2 = (y0 + y1) / 2.0;
-
-        for x in 0..sub_quads - skip {
-            let i = ((z * sub_quads + x) * 6) as usize;
-
-            let scale_1 = 1.0 - (x - 0) as f32 / (sub_quads - skip - 0) as f32;
-            let scale_2 = 1.0 - ((x + 1) - 0) as f32 / (sub_quads - skip - 0) as f32;
-
-            // let scale_1 = ease_in_quint(scale_1);
-            // let scale_2 = ease_in_quint(scale_2);
-
-            points_1[i + 0][1] = lerp(scale_1, points_1[i + 0][1], mid_point_1);
-            points_1[i + 1][1] = lerp(scale_1, points_1[i + 1][1], mid_point_2);
-            points_1[i + 2][1] = lerp(scale_2, points_1[i + 2][1], mid_point_1);
-            points_1[i + 3][1] = lerp(scale_2, points_1[i + 3][1], mid_point_1);
-            points_1[i + 4][1] = lerp(scale_1, points_1[i + 4][1], mid_point_2);
-            points_1[i + 5][1] = lerp(scale_2, points_1[i + 5][1], mid_point_2);
-        }
-    }
-}
-
-fn blend_tiles3(points_1: &mut [[f32; 3]], points_2: &[[f32; 3]], subdivision: u8) {
-    let sub_quads = 2i32.pow(subdivision as u32);
-    let row_step = sub_quads * 6;
-    let skip = 10;
-
-    for z in 0..sub_quads {
-        let y0 = points_1[(z * 6) as usize][1];
-        let y1 = points_2[(z * 6 + (row_step * (sub_quads - 1)) + 4) as usize][1];
-        let mid_point_1 = (y0 + y1) / 2.0;
-
-        let y0 = points_1[(z * 6 + 2) as usize][1];
-        let y1 = points_2[(z * 6 + (row_step * (sub_quads - 1)) + 5) as usize][1];
-        let mid_point_2 = (y0 + y1) / 2.0;
-
-        for x in skip..sub_quads {
-            let i = ((x * sub_quads + z) * 6) as usize;
-
-            let scale_1 = (x - skip) as f32 / (sub_quads - skip) as f32;
-            let scale_2 = ((x + 1) - skip) as f32 / (sub_quads - skip) as f32;
-
-            // let scale_1 = ease_in_quint(scale_1);
-            // let scale_2 = ease_in_quint(scale_2);
-
-            points_1[i + 0][1] = lerp(scale_1, points_1[i + 0][1], mid_point_1);
-            points_1[i + 1][1] = lerp(scale_2, points_1[i + 1][1], mid_point_1);
-            points_1[i + 2][1] = lerp(scale_1, points_1[i + 2][1], mid_point_2);
-            points_1[i + 3][1] = lerp(scale_1, points_1[i + 3][1], mid_point_2);
-            points_1[i + 4][1] = lerp(scale_2, points_1[i + 4][1], mid_point_1);
-            points_1[i + 5][1] = lerp(scale_2, points_1[i + 5][1], mid_point_2);
-        }
-    }
-}
-
-fn blend_tiles4(points_1: &mut [[f32; 3]], points_2: &[[f32; 3]], subdivision: u8) {
-    let sub_quads = 2i32.pow(subdivision as u32);
-    let row_step = sub_quads * 6;
-    let skip = 10;
-
-    for z in 0..sub_quads {
-        let y0 = points_2[(z * 6) as usize][1];
-        let y1 = points_1[(z * 6 + (row_step * (sub_quads - 1)) + 4) as usize][1];
-        let mid_point_1 = (y0 + y1) / 2.0;
-
-        let y0 = points_2[(z * 6 + 2) as usize][1];
-        let y1 = points_1[(z * 6 + (row_step * (sub_quads - 1)) + 5) as usize][1];
-        let mid_point_2 = (y0 + y1) / 2.0;
-
-        for x in 0..sub_quads - skip {
-            let i = ((x * sub_quads + z) * 6) as usize;
-
-            let scale_1 = 1.0 - x as f32 / (sub_quads - skip) as f32;
-            let scale_2 = 1.0 - (x + 1) as f32 / (sub_quads - skip) as f32;
-
-            // let scale_1 = ease_in_quint(scale_1);
-            // let scale_2 = ease_in_quint(scale_2);
-
-            points_1[i + 0][1] = lerp(scale_1, points_1[i + 0][1], mid_point_1);
-            points_1[i + 1][1] = lerp(scale_2, points_1[i + 1][1], mid_point_1);
-            points_1[i + 2][1] = lerp(scale_1, points_1[i + 2][1], mid_point_2);
-            points_1[i + 3][1] = lerp(scale_1, points_1[i + 3][1], mid_point_2);
-            points_1[i + 4][1] = lerp(scale_2, points_1[i + 4][1], mid_point_1);
-            points_1[i + 5][1] = lerp(scale_2, points_1[i + 5][1], mid_point_2);
-        }
-    }
+    None
 }
 
 fn set_mesh_position(positions: &Vec<[f32; 3]>, handle: &Handle<Mesh>, meshes: &mut Assets<Mesh>) {

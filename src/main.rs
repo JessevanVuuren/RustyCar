@@ -17,12 +17,13 @@ use car::{CarPlugin, spawn::spawn_car};
 use crate::{
     car::components::Car,
     world::WorldPlugin,
-    world_config::{grass_test, test_world},
+    world_config::{grass_test, grass_test_2, test_world},
 };
 
 fn main() {
     // let static_world = test_world();
-    let static_world = grass_test();
+    // let static_world = grass_test();
+    let static_world = grass_test_2();
 
     App::new()
         .add_plugins((

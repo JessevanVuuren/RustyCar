@@ -101,7 +101,7 @@ fn add_to_world_map(
                 key,
                 Ground {
                     entity: id,
-                    id: layer_id,
+                    id: layer_id as isize,
                 },
             );
         }

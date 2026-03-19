@@ -128,7 +128,7 @@ pub struct TileWorld {
 #[derive(Clone, Debug)]
 pub struct Ground {
     pub entity: Entity,
-    pub id: usize,
+    pub id: isize,
 }
 
 
