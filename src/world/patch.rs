@@ -4,7 +4,59 @@ use crate::world::components::{
 };
 use bevy::{mesh::VertexAttributeValues, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{f32::consts::FRAC_PI_2, iter};
+use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter};
+
+// let CONFIGURATION: [[usize; 4]; 2] = [[1, 1, 0, 0], [1,1,1,0]];
+
+// 3 type of ramps
+// 4 ramps
+// 4 rotations
+// 4 tiles
+
+enum Stitch {
+    Ramp,
+    In,
+    Out,
+}
+
+struct PatchWorks {
+    template: [usize; 4],
+    stitch: [Stitch; 4],
+    rotation: [usize; 4],
+}
+
+const CONFIGURATION: [PatchWorks; 6] = [
+    PatchWorks {
+        stitch: [Stitch::Ramp, Stitch::Ramp, Stitch::Ramp, Stitch::Ramp],
+        rotation: [1, 1, 3, 3],
+        template: [1, 1, 0, 0],
+    },
+    PatchWorks {
+        stitch: [Stitch::Ramp, Stitch::Ramp, Stitch::Ramp, Stitch::Ramp],
+        rotation: [0, 2, 0, 2],
+        template: [1, 0, 1, 0],
+    },
+    PatchWorks {
+        stitch: [Stitch::Out, Stitch::Ramp, Stitch::Ramp, Stitch::In],
+        rotation: [0, 1, 0, 2],
+        template: [1, 1, 1, 0],
+    },
+    PatchWorks {
+        stitch: [Stitch::Ramp, Stitch::Out, Stitch::In, Stitch::Ramp],
+        rotation: [1, 1, 3, 2],
+        template: [1, 1, 0, 1],
+    },
+    PatchWorks {
+        stitch: [Stitch::Ramp, Stitch::In, Stitch::Out, Stitch::Ramp],
+        rotation: [0, 1, 3, 3],
+        template: [1, 0, 1, 1],
+    },
+    PatchWorks {
+        stitch: [Stitch::In, Stitch::Ramp, Stitch::Ramp, Stitch::Out],
+        rotation: [0, 2, 3, 2],
+        template: [0, 1, 1, 1],
+    },
+];
 
 pub fn patch_ground(
     mut commands: Commands,
@@ -36,116 +88,76 @@ pub fn patch_ground(
                     let range = TilePos::subtract_range(positive, negative);
 
                     for tile in range {
-                        let mut tile_cc = TilePos::new(tile.x + 0, tile.z + 0); // center   center
-                        let mut tile_cr = TilePos::new(tile.x + 1, tile.z + 0); // right    center
-                        let mut tile_bc = TilePos::new(tile.x + 0, tile.z + 1); // center   bottom
-                        let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // right    bottom
+                        let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
+                        let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
+                        let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
+                        let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
 
-                        let ground_cc = world.ground.get(&tile_cc).map_or(-1, |f| f.id); // center center   
-                        let ground_cr = world.ground.get(&tile_cr).map_or(-1, |f| f.id); // center right    
-                        let ground_bc = world.ground.get(&tile_bc).map_or(-1, |f| f.id); // bottom center   
-                        let ground_br = world.ground.get(&tile_br).map_or(-1, |f| f.id); // bottom right    
-
-                        let Some(handle) = mesh_on_tile(&world, tile_cc, &query) else {
-                            continue;
-                        };
-
-                        let Some(mut pos) = get_mesh_positions(&meshes, &handle) else {
-                            continue;
-                        };
-
-                        // 3 type of ramps
-                        // 4 ramps
-                        // 4 rotations
-                        // 4 tiles
-
+                        let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
+                        let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
+                        let ground_bl = world.ground.get(&tile_bl).map_or(0, |f| f.id); // bottom   left
+                        let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
 
                         if let (
-                            Some(mut pos_cc),
-                            Some(mut pos_cr),
-                            Some(mut pos_bc),
+                            Some(mut pos_tl),
+                            Some(mut pos_tr),
+                            Some(mut pos_bl),
                             Some(mut pos_br),
                         ) = (
-                            tile_mesh_positions(&world, tile_cc, &query, &meshes),
-                            tile_mesh_positions(&world, tile_cr, &query, &meshes),
-                            tile_mesh_positions(&world, tile_bc, &query, &meshes),
+                            tile_mesh_positions(&world, tile_tl, &query, &meshes),
+                            tile_mesh_positions(&world, tile_tr, &query, &meshes),
+                            tile_mesh_positions(&world, tile_bl, &query, &meshes),
                             tile_mesh_positions(&world, tile_br, &query, &meshes),
                         ) {
-                            let sub_quads = 2i32.pow(4.0 as u32);
+                            if ground_tl == ground_tr
+                                && ground_bl == ground_br
+                                && ground_bl == ground_tl
+                            {
+                                continue;
+                            }
 
+                            let sub_quads = 2i32.pow(4.0 as u32);
                             let half = sub_quads / 2;
                             let points = half + 1;
 
-                            if (ground_cc == ground_bc
-                                && ground_cc == ground_cr
-                                && ground_cc != ground_br)
-                            {
-                                let height_ramp: Vec<f32> = ramp_map(points).collect();
-                                let height_curve: Vec<f32> = curve_map(points).collect();
-                                let height_reverse: Vec<f32> = reverse_map(points).collect();
-                                let height_map = vec![
-                                    rotate(height_curve.clone(), points, 0),
-                                    rotate(height_ramp.clone(), points, 1),
-                                    rotate(height_ramp.clone(), points, 0),
-                                    rotate(height_reverse.clone(), points, 2),
-                                ];
+                            for conf in CONFIGURATION {
+                                let inverted = inverse_template(&conf.template);
 
-                                stitch_tiles(
-                                    &mut pos_cc.0,
-                                    &mut pos_cr.0,
-                                    &mut pos_bc.0,
-                                    &mut pos_br.0,
-                                    height_map,
-                                );
+                                let observed = [ground_tl, ground_tr, ground_bl, ground_br];
+
+                                let res_1 = multiply_core(&conf.template, &observed);
+                                let res_2 = multiply_core(&inverted, &observed);
+
+                                let res_1 = core_continuity(&res_1);
+                                let res_2 = core_continuity(&res_2);
+
+                                if res_1 && res_2 {
+                                    let mut height_map: Vec<Vec<f32>> = Vec::new();
+
+                                    for i in 0..4 {
+                                        let map: Vec<f32> = match conf.stitch[i] {
+                                            Stitch::Ramp => ramp_map(points).collect(),
+                                            Stitch::In => reverse_map(points).collect(),
+                                            Stitch::Out => curve_map(points).collect(),
+                                        };
+
+                                        height_map.push(rotate(map, points, conf.rotation[i]));
+                                    }
+
+                                    stitch_tiles(
+                                        &mut pos_tl.0,
+                                        &mut pos_tr.0,
+                                        &mut pos_bl.0,
+                                        &mut pos_br.0,
+                                        height_map,
+                                    );
+
+                                    set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
+                                    set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
+                                    set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
+                                    set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
+                                }
                             }
-
-                            if (ground_cc != ground_bc
-                                && ground_cr != ground_br
-                                && ground_cc == ground_cr
-                                && ground_bc == ground_br)
-                            {
-                                let height: Vec<f32> = ramp_map(points).collect();
-                                let height_map = vec![
-                                    rotate(height.clone(), points, 1),
-                                    rotate(height.clone(), points, 1),
-                                    rotate(height.clone(), points, 3),
-                                    rotate(height.clone(), points, 3),
-                                ];
-
-                                stitch_tiles(
-                                    &mut pos_cc.0,
-                                    &mut pos_cr.0,
-                                    &mut pos_bc.0,
-                                    &mut pos_br.0,
-                                    height_map,
-                                );
-                            }
-
-                            if (ground_cc == ground_bc
-                                && ground_cr == ground_br
-                                && ground_cc != ground_cr
-                                && ground_bc != ground_br)
-                            {
-                                let height: Vec<f32> = ramp_map(points).collect();
-                                let height_map = vec![
-                                    rotate(height.clone(), points, 0),
-                                    rotate(height.clone(), points, 2),
-                                    rotate(height.clone(), points, 0),
-                                    rotate(height.clone(), points, 2),
-                                ];
-
-                                stitch_tiles(
-                                    &mut pos_cc.0,
-                                    &mut pos_cr.0,
-                                    &mut pos_bc.0,
-                                    &mut pos_br.0,
-                                    height_map,
-                                );
-                            }
-                            set_mesh_position(&pos_cc.0, &pos_cc.1, &mut meshes);
-                            set_mesh_position(&pos_cr.0, &pos_cr.1, &mut meshes);
-                            set_mesh_position(&pos_bc.0, &pos_bc.1, &mut meshes);
-                            set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
                         }
                     }
                 }
@@ -153,6 +165,34 @@ pub fn patch_ground(
             _ => (),
         }
     }
+}
+
+fn multiply_core(template: &[usize; 4], observed: &[usize; 4]) -> [usize; 4] {
+    [
+        template[0] * observed[0],
+        template[1] * observed[1],
+        template[2] * observed[2],
+        template[3] * observed[3],
+    ]
+}
+
+fn inverse_template(template: &[usize; 4]) -> [usize; 4] {
+    template.map(|i| if i == 0 { 1 } else { 0 })
+}
+
+fn core_continuity(result: &[usize; 4]) -> bool {
+    let mut base = 0 as usize;
+    for i in 0..4 {
+        if base == 0 && result[i] != 0 {
+            base = result[i];
+        }
+
+        if result[i] != 0 && result[i] != base {
+            return false;
+        }
+    }
+
+    true
 }
 
 fn stitch_tiles(
@@ -231,7 +271,7 @@ fn stitch_tiles(
     }
 }
 
-fn rotate<T: Copy>(array: Vec<T>, size: i32, step: i32) -> Vec<T> {
+fn rotate<T: Copy>(array: Vec<T>, size: i32, step: usize) -> Vec<T> {
     let mut rotated = Vec::with_capacity((size * size) as usize);
 
     for y in 0..size {
