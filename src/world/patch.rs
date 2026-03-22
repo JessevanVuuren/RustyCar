@@ -4,7 +4,7 @@ use crate::world::components::{
 };
 use bevy::{mesh::VertexAttributeValues, prelude::*};
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter};
+use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter, str::LinesAny};
 
 // let CONFIGURATION: [[usize; 4]; 2] = [[1, 1, 0, 0], [1,1,1,0]];
 
@@ -144,8 +144,14 @@ pub fn patch_ground(
                                         height_map.push(rotate(map, points, conf.rotation[i]));
                                     }
 
-                                    let mid_line =
-                                        stitch_line(&pos_tl.0, &pos_tr.0, &pos_bl.0, &pos_br.0);
+                                    let lines = intersecting_line(
+                                        &mut pos_tl.0,
+                                        &mut pos_tr.0,
+                                        &mut pos_bl.0,
+                                        &mut pos_br.0,
+                                    );
+
+                                    // let stitch_lines = stitch_line_orchestrator();
 
                                     stitch_tiles(
                                         &mut pos_tl.0,
@@ -153,7 +159,7 @@ pub fn patch_ground(
                                         &mut pos_bl.0,
                                         &mut pos_br.0,
                                         height_map,
-                                        mid_line,
+                                        lines,
                                     );
 
                                     set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
@@ -167,6 +173,183 @@ pub fn patch_ground(
                 }
             }
             _ => (),
+        }
+    }
+}
+
+fn stitch_line_orchestrator(stitch_lines: Vec<Vec<f32>>, template: &[usize; 4]) -> Vec<Vec<f32>> {
+    let mut sorted = Vec::new();
+
+    // stitch_lines[0] == tile 1 and 2;
+    // two entries 8 * 2 = 16 total
+
+    // 1 0
+    // 1 0
+    // => stitch_lines[0]
+
+    // 0 0
+    // 1 1
+    // => stitch_lines[1]
+
+    sorted
+}
+
+fn intersecting_line(
+    tile1: &mut [[f32; 3]],
+    tile2: &mut [[f32; 3]],
+    tile3: &mut [[f32; 3]],
+    tile4: &mut [[f32; 3]],
+) -> Vec<Vec<f32>> {
+    let mut mid_points = Vec::new();
+
+    let sub_quads = 2i32.pow(4.0 as u32);
+    let half = sub_quads / 2;
+
+    let quad_points = 6;
+    let row = sub_quads * quad_points;
+
+    let mut mid_top = Vec::with_capacity(half as usize * 2);
+
+    for i in (0..half) {
+        let index_1 = ((i + half + 1) * row - quad_points) as usize;
+        let index_2 = ((i + half) * row) as usize;
+
+        let left_top = tile1[index_1 + 2][1];
+        let left_bottom = tile1[index_1 + 5][1];
+
+        let right_top = tile2[index_2 + 0][1];
+        let right_bottom = tile2[index_2 + 1][1];
+
+        mid_top.push((left_top + right_top) / 2.0);
+        mid_top.push((left_bottom + right_bottom) / 2.0);
+    }
+
+    let mut mid_left = Vec::with_capacity(half as usize * 2);
+    for i in 0..half {
+        let index_1 = (row * (sub_quads - 1) + (half + i) * quad_points) as usize;
+        let index_2 = ((i + half) * quad_points) as usize;
+
+        let top_left = tile1[index_1 + 4][1];
+        let top_right = tile1[index_1 + 5][1];
+
+        let bottom_left = tile3[index_2 + 0][1];
+        let bottom_right = tile3[index_2 + 2][1];
+
+        mid_left.push((top_left + bottom_left) / 2.0);
+        mid_left.push((top_right + bottom_right) / 2.0);
+    }
+
+    let mut mid_right = Vec::with_capacity(half as usize * 2);
+    for i in 0..half {
+        let index_1 = (row * (sub_quads - 1) + i * quad_points) as usize;
+        let index_2 = (i * quad_points) as usize;
+
+        let top_left = tile2[index_1 + 4][1];
+        let top_right = tile2[index_1 + 5][1];
+
+        let bottom_left = tile4[index_2 + 0][1];
+        let bottom_right = tile4[index_2 + 2][1];
+
+        mid_right.push((top_left + bottom_left) / 2.0);
+        mid_right.push((top_right + bottom_right) / 2.0);
+    }
+
+    let mut mid_bottom = Vec::with_capacity(half as usize * 2);
+    for i in 0..half {
+        let index_1 = (((i + 1) * row) - quad_points) as usize;
+        let index_2 = (i * row) as usize;
+
+        let left_top = tile3[index_1 + 2][1];
+        let left_bottom = tile3[index_1 + 5][1];
+
+        let right_top = tile4[index_2 + 0][1];
+        let right_bottom = tile4[index_2 + 1][1];
+
+        mid_bottom.push((left_top + right_top) / 2.0);
+        mid_bottom.push((left_bottom + right_bottom) / 2.0);
+    }
+
+    // mid_points.push(mid_top);
+    // mid_points.push(mid_bottom);
+    mid_points.push(mid_left);
+    mid_points.push(mid_right);
+
+    mid_points
+}
+
+fn stitch_tiles(
+    tile1: &mut [[f32; 3]],
+    tile2: &mut [[f32; 3]],
+    tile3: &mut [[f32; 3]],
+    tile4: &mut [[f32; 3]],
+    height_map: Vec<Vec<f32>>,
+    stitch: Vec<Vec<f32>>,
+) {
+    let sub_quads = 2i32.pow(4.0 as u32);
+    let half = sub_quads / 2;
+    let points = half + 1;
+    let point = 1.0;
+
+    for z in 0..half {
+        for x in 0..half {
+            let base_1 = (z * points + x) as usize;
+            let base_2 = ((z + 1) * points + x) as usize;
+
+            let top_left = height_map[0][base_1 + 0];
+            let bot_left = height_map[0][base_2 + 0];
+
+            let top_right = height_map[0][base_1 + 1];
+            let bot_right = height_map[0][base_2 + 1];
+
+            let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
+            tile1[i + 0][1] = lerp(top_left, tile1[i + 0][1], stitch[0][x as usize * 2]);
+            tile1[i + 1][1] = lerp(bot_left, tile1[i + 1][1], stitch[0][x as usize * 2]);
+            tile1[i + 2][1] = lerp(top_right, tile1[i + 2][1], stitch[0][x as usize * 2 + 1]);
+            tile1[i + 3][1] = lerp(top_right, tile1[i + 3][1], stitch[0][x as usize * 2 + 1]);
+            tile1[i + 4][1] = lerp(bot_left, tile1[i + 4][1], stitch[0][x as usize * 2]);
+            tile1[i + 5][1] = lerp(bot_right, tile1[i + 5][1], stitch[0][x as usize * 2 + 1]);
+
+            let top_left = height_map[1][base_1 + 0];
+            let bot_left = height_map[1][base_2 + 0];
+
+            let top_right = height_map[1][base_1 + 1];
+            let bot_right = height_map[1][base_2 + 1];
+
+            let i = (((z + half) * sub_quads + x) * 6) as usize;
+            tile2[i + 0][1] = lerp(top_left, tile2[i + 0][1], stitch[1][x as usize * 2]);
+            tile2[i + 1][1] = lerp(bot_left, tile2[i + 1][1], stitch[1][x as usize * 2]);
+            tile2[i + 2][1] = lerp(top_right, tile2[i + 2][1], stitch[1][x as usize * 2 + 1]);
+            tile2[i + 3][1] = lerp(top_right, tile2[i + 3][1], stitch[1][x as usize * 2 + 1]);
+            tile2[i + 4][1] = lerp(bot_left, tile2[i + 4][1], stitch[1][x as usize * 2]);
+            tile2[i + 5][1] = lerp(bot_right, tile2[i + 5][1], stitch[1][x as usize * 2 + 1]);
+
+            let top_left = height_map[2][base_1 + 0];
+            let bot_left = height_map[2][base_2 + 0];
+
+            let top_right = height_map[2][base_1 + 1];
+            let bot_right = height_map[2][base_2 + 1];
+
+            let i = ((z * sub_quads + (x + half)) * 6) as usize;
+            tile3[i + 0][1] = lerp(top_left, tile3[i + 0][1], stitch[0][x as usize * 2]);
+            tile3[i + 1][1] = lerp(bot_left, tile3[i + 1][1], stitch[0][x as usize * 2]);
+            tile3[i + 2][1] = lerp(top_right, tile3[i + 2][1], stitch[0][x as usize * 2 + 1]);
+            tile3[i + 3][1] = lerp(top_right, tile3[i + 3][1], stitch[0][x as usize * 2 + 1]);
+            tile3[i + 4][1] = lerp(bot_left, tile3[i + 4][1], stitch[0][x as usize * 2]);
+            tile3[i + 5][1] = lerp(bot_right, tile3[i + 5][1], stitch[0][x as usize * 2 + 1]);
+
+            let top_left = height_map[3][base_1 + 0];
+            let bot_left = height_map[3][base_2 + 0];
+
+            let top_right = height_map[3][base_1 + 1];
+            let bot_right = height_map[3][base_2 + 1];
+
+            let i = ((z * sub_quads + x) * 6) as usize;
+            tile4[i + 0][1] = lerp(top_left, tile4[i + 0][1], stitch[1][x as usize * 2]);
+            tile4[i + 1][1] = lerp(bot_left, tile4[i + 1][1], stitch[1][x as usize * 2]);
+            tile4[i + 2][1] = lerp(top_right, tile4[i + 2][1], stitch[1][x as usize * 2 + 1]);
+            tile4[i + 3][1] = lerp(top_right, tile4[i + 3][1], stitch[1][x as usize * 2 + 1]);
+            tile4[i + 4][1] = lerp(bot_left, tile4[i + 4][1], stitch[1][x as usize * 2]);
+            tile4[i + 5][1] = lerp(bot_right, tile4[i + 5][1], stitch[1][x as usize * 2 + 1]);
         }
     }
 }
@@ -197,174 +380,6 @@ fn core_continuity(result: &[usize; 4]) -> bool {
     }
 
     true
-}
-
-fn stitch_line(
-    tile1: &[[f32; 3]],
-    tile2: &[[f32; 3]],
-    tile3: &[[f32; 3]],
-    tile4: &[[f32; 3]],
-) -> Vec<Vec<f32>> {
-    let mut mid_points = Vec::new();
-
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let half = sub_quads / 2;
-
-    let quad_points = 6;
-    let row = sub_quads * quad_points;
-
-    let mut mid_top = Vec::with_capacity(half as usize * 2);
-    for i in 0..half {
-        let index_1 = ((i + half + 1) * row - quad_points) as usize;
-        let index_2 = ((i + half) * row) as usize;
-
-        let left_1_1 = tile1[index_1 + 2][1];
-        let right_1_1 = tile1[index_1 + 5][1];
-
-        let left_2_1 = tile2[index_2 + 0][1];
-        let right_2_1 = tile2[index_2 + 1][1];
-
-        let index_1 = (row * (sub_quads - 1) + (half + i) * quad_points) as usize;
-        let index_2 = ((i + half) * quad_points) as usize;
-
-        let left_1_2 = tile1[index_1 + 4][1];
-        let right_1_2 = tile1[index_1 + 5][1];
-
-        let left_2_3 = tile3[index_2 + 0][1];
-        let right_2_3 = tile3[index_2 + 2][1];
-
-        mid_top.push((left_1_1 + left_2_1) / 2.0);
-        mid_top.push((right_1_1 + right_2_1) / 2.0);
-
-        mid_top.push((left_1_2 + left_2_3) / 2.0);
-        mid_top.push((right_1_2 + right_2_3) / 2.0);
-    }
-
-    // let mut mid_left = Vec::with_capacity(half as usize * 2);
-    // for i in 0..half {
-    //     let index_1 = (row * (sub_quads - 1) + (half + i) * quad_points) as usize;
-    //     let index_2 = ((i + half) * quad_points) as usize;
-
-    //     let left_1 = tile1[index_1 + 4][1];
-    //     let right_1 = tile1[index_1 + 5][1];
-
-    //     let left_2 = tile3[index_2 + 0][1];
-    //     let right_2 = tile3[index_2 + 2][1];
-
-    //     mid_left.push((left_1 + right_1) / 2.0);
-    //     mid_left.push((left_2 + right_2) / 2.0);
-    // }
-
-    // let mut mid_right = Vec::with_capacity(half as usize * 2);
-    // for i in 0..half {
-    //     let index_1 = (row * (sub_quads - 1) + i * quad_points) as usize;
-    //     let index_2 = (i * quad_points) as usize;
-
-    //     let left_1 = tile2[index_1 + 4][1];
-    //     let right_1 = tile2[index_1 + 5][1];
-
-    //     let left_2 = tile4[index_2 + 0][1];
-    //     let right_2 = tile4[index_2 + 2][1];
-
-    //     mid_right.push((left_1 + right_1) / 2.0);
-    //     mid_right.push((left_2 + right_2) / 2.0);
-    // }
-
-    // let mut mid_bottom = Vec::with_capacity(half as usize * 2);
-    // for i in 0..half {
-    //     let index_1 = ((i + 1) * row - quad_points) as usize;
-    //     let index_2 = (i * row) as usize;
-
-    //     let left_1 = tile3[index_1 + 3][1];
-    //     let right_1 = tile3[index_1 + 5][1];
-
-    //     let left_2 = tile4[index_2 + 0][1];
-    //     let right_2 = tile4[index_2 + 1][1];
-
-    //     mid_bottom.push((left_1 + right_1) / 2.0);
-    //     mid_bottom.push((left_2 + right_2) / 2.0);
-    // }
-
-    mid_points.push(mid_top);
-
-    mid_points
-}
-
-fn stitch_tiles(
-    tile1: &mut [[f32; 3]],
-    tile2: &mut [[f32; 3]],
-    tile3: &mut [[f32; 3]],
-    tile4: &mut [[f32; 3]],
-    height_map: Vec<Vec<f32>>,
-    stitch_line: Vec<Vec<f32>>,
-) {
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let half = sub_quads / 2;
-    let points = half + 1;
-    let point = 0.25;
-
-    for z in 0..half {
-        for x in 0..half {
-            let base_1 = (z * points + x) as usize;
-            let base_2 = ((z + 1) * points + x) as usize;
-
-            let top_left = height_map[0][base_1 + 0];
-            let bot_left = height_map[0][base_2 + 0];
-
-            let top_right = height_map[0][base_1 + 1];
-            let bot_right = height_map[0][base_2 + 1];
-
-            let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
-            tile1[i + 0][1] = lerp(ease_in_quint(top_left), tile1[i + 0][1], point);
-            tile1[i + 1][1] = lerp(ease_in_quint(bot_left), tile1[i + 1][1], point);
-            tile1[i + 2][1] = lerp(ease_in_quint(top_right), tile1[i + 2][1], point);
-            tile1[i + 3][1] = lerp(ease_in_quint(top_right), tile1[i + 3][1], point);
-            tile1[i + 4][1] = lerp(ease_in_quint(bot_left), tile1[i + 4][1], point);
-            tile1[i + 5][1] = lerp(ease_in_quint(bot_right), tile1[i + 5][1], point);
-
-            let top_left = height_map[1][base_1 + 0];
-            let bot_left = height_map[1][base_2 + 0];
-
-            let top_right = height_map[1][base_1 + 1];
-            let bot_right = height_map[1][base_2 + 1];
-
-            let i = (((z + half) * sub_quads + x) * 6) as usize;
-            tile2[i + 0][1] = lerp(ease_in_quint(top_left), tile2[i + 0][1], point);
-            tile2[i + 1][1] = lerp(ease_in_quint(bot_left), tile2[i + 1][1], point);
-            tile2[i + 2][1] = lerp(ease_in_quint(top_right), tile2[i + 2][1], point);
-            tile2[i + 3][1] = lerp(ease_in_quint(top_right), tile2[i + 3][1], point);
-            tile2[i + 4][1] = lerp(ease_in_quint(bot_left), tile2[i + 4][1], point);
-            tile2[i + 5][1] = lerp(ease_in_quint(bot_right), tile2[i + 5][1], point);
-
-            let top_left = height_map[2][base_1 + 0];
-            let bot_left = height_map[2][base_2 + 0];
-
-            let top_right = height_map[2][base_1 + 1];
-            let bot_right = height_map[2][base_2 + 1];
-
-            let i = ((z * sub_quads + (x + half)) * 6) as usize;
-            tile3[i + 0][1] = lerp(ease_in_quint(top_left), tile3[i + 0][1], point);
-            tile3[i + 1][1] = lerp(ease_in_quint(bot_left), tile3[i + 1][1], point);
-            tile3[i + 2][1] = lerp(ease_in_quint(top_right), tile3[i + 2][1], point);
-            tile3[i + 3][1] = lerp(ease_in_quint(top_right), tile3[i + 3][1], point);
-            tile3[i + 4][1] = lerp(ease_in_quint(bot_left), tile3[i + 4][1], point);
-            tile3[i + 5][1] = lerp(ease_in_quint(bot_right), tile3[i + 5][1], point);
-
-            let top_left = height_map[3][base_1 + 0];
-            let bot_left = height_map[3][base_2 + 0];
-
-            let top_right = height_map[3][base_1 + 1];
-            let bot_right = height_map[3][base_2 + 1];
-
-            let i = ((z * sub_quads + x) * 6) as usize;
-            tile4[i + 0][1] = lerp(ease_in_quint(top_left), tile4[i + 0][1], point);
-            tile4[i + 1][1] = lerp(ease_in_quint(bot_left), tile4[i + 1][1], point);
-            tile4[i + 2][1] = lerp(ease_in_quint(top_right), tile4[i + 2][1], point);
-            tile4[i + 3][1] = lerp(ease_in_quint(top_right), tile4[i + 3][1], point);
-            tile4[i + 4][1] = lerp(ease_in_quint(bot_left), tile4[i + 4][1], point);
-            tile4[i + 5][1] = lerp(ease_in_quint(bot_right), tile4[i + 5][1], point);
-        }
-    }
 }
 
 fn rotate<T: Copy>(array: Vec<T>, size: i32, step: usize) -> Vec<T> {

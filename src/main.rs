@@ -21,9 +21,9 @@ use crate::{
 };
 
 fn main() {
-    let static_world = test_world();
+    // let static_world = test_world();
     // let static_world = grass_test();
-    // let static_world = grass_test_2();
+    let static_world = grass_test_2();
 
     App::new()
         .add_plugins((
