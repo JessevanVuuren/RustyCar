@@ -16,9 +16,9 @@ pub fn grass_test_2() -> StaticWorld {
     let grass_start = TilePos::new(1, 1);
     let grass_stop = TilePos::new(4, 4);
 
-    // let dirt_start = TilePos::new(1, 1);
-    // let dirt_stop = TilePos::new(2, 1);
-    // let grass_start = TilePos::new(1, 2);
+    // let dirt_start = TilePos::new(2, 2);
+    // let dirt_stop = TilePos::new(2, 2);
+    // let grass_start = TilePos::new(1, 1);
     // let grass_stop = TilePos::new(2, 2);
 
     StaticWorld {
