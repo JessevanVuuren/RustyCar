@@ -25,6 +25,8 @@ struct PatchWorks {
     rotation: [usize; 4],
 }
 
+const MID_POINT: f32 = 0.25;
+
 const CONFIGURATION: [PatchWorks; 6] = [
     PatchWorks {
         stitch: [Stitch::Ramp, Stitch::Ramp, Stitch::Ramp, Stitch::Ramp],
@@ -144,19 +146,12 @@ pub fn patch_ground(
                                         height_map.push(rotate(map, points, conf.rotation[i]));
                                     }
 
-                                    let lines = intersecting_line(
-                                        &pos_tl.0, &pos_tr.0, &pos_bl.0, &pos_br.0,
-                                    );
-
-                                    let line = stitch_line_orchestrator(lines, &conf.template);
-
                                     stitch_tiles(
                                         &mut pos_tl.0,
                                         &mut pos_tr.0,
                                         &mut pos_bl.0,
                                         &mut pos_br.0,
                                         height_map,
-                                        line,
                                     );
 
                                     set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
@@ -174,141 +169,21 @@ pub fn patch_ground(
     }
 }
 
-fn stitch_line_orchestrator(stitch_lines: Vec<Vec<f32>>, template: &[usize; 4]) -> Vec<f32> {
-    let tiles = 4;
-    let points_per_quat = 6;
-    let half = 8; // 192
-    let points = (tiles * points_per_quat * half) as usize;
-
-    let mut sorted = Vec::with_capacity(points);
-
-
-    // let test = [0, 0, 1, 1];
-
-    // for i in 0..half as usize {
-    //     for t in 0..tiles {
-    //         sorted.push(stitch_lines[test[t]][i * 2]);
-    //         sorted.push(stitch_lines[test[t]][i * 2 + 1]);
-    //         sorted.push(stitch_lines[test[t]][i * 2]);
-    //         sorted.push(stitch_lines[test[t]][i * 2]);
-    //         sorted.push(stitch_lines[test[t]][i * 2 + 1]);
-    //         sorted.push(stitch_lines[test[t]][i * 2 + 1]);
-    //     }
-    // }
-
-    let test = [2, 3, 2, 3];
-
-    for i in 0..half as usize {
-        for t in 0..tiles {
-            sorted.push(stitch_lines[test[t]][i  * 2]);
-            sorted.push(stitch_lines[test[t]][i  * 2]);
-            sorted.push(stitch_lines[test[t]][i  * 2 + 1]);
-            sorted.push(stitch_lines[test[t]][i  * 2 + 1]);
-            sorted.push(stitch_lines[test[t]][i  * 2]);
-            sorted.push(stitch_lines[test[t]][i  * 2 + 1]);
-        }
-    }
-
-    sorted
-}
-
-fn intersecting_line(
-    tile1: &[[f32; 3]],
-    tile2: &[[f32; 3]],
-    tile3: &[[f32; 3]],
-    tile4: &[[f32; 3]],
-) -> Vec<Vec<f32>> {
-    let mut mid_points = Vec::new();
-
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let half = sub_quads / 2;
-
-    let quad_points = 6;
-    let row = sub_quads * quad_points;
-
-    let mut mid_top = Vec::with_capacity(half as usize * 2);
-    for i in (0..half) {
-        let index_1 = ((i + half + 1) * row - quad_points) as usize;
-        let index_2 = ((i + half) * row) as usize;
-
-        let left_top = tile1[index_1 + 2][1];
-        let left_bottom = tile1[index_1 + 5][1];
-
-        let right_top = tile2[index_2 + 0][1];
-        let right_bottom = tile2[index_2 + 1][1];
-
-        mid_top.push((left_top + right_top) / 2.0);
-        mid_top.push((left_bottom + right_bottom) / 2.0);
-    }
-
-    let mut mid_left = Vec::with_capacity(half as usize * 2);
-    for i in 0..half {
-        let index_1 = (row * (sub_quads - 1) + (half + i) * quad_points) as usize;
-        let index_2 = ((i + half) * quad_points) as usize;
-
-        let top_left = tile1[index_1 + 4][1];
-        let top_right = tile1[index_1 + 5][1];
-
-        let bottom_left = tile3[index_2 + 0][1];
-        let bottom_right = tile3[index_2 + 2][1];
-
-        mid_left.push((top_left + bottom_left) / 2.0);
-        mid_left.push((top_right + bottom_right) / 2.0);
-    }
-
-    let mut mid_right = Vec::with_capacity(half as usize * 2);
-    for i in 0..half {
-        let index_1 = (row * (sub_quads - 1) + i * quad_points) as usize;
-        let index_2 = (i * quad_points) as usize;
-
-        let top_left = tile2[index_1 + 4][1];
-        let top_right = tile2[index_1 + 5][1];
-
-        let bottom_left = tile4[index_2 + 0][1];
-        let bottom_right = tile4[index_2 + 2][1];
-
-        mid_right.push((top_left + bottom_left) / 2.0);
-        mid_right.push((top_right + bottom_right) / 2.0);
-    }
-
-    let mut mid_bottom = Vec::with_capacity(half as usize * 2);
-    for i in 0..half {
-        let index_1 = (((i + 1) * row) - quad_points) as usize;
-        let index_2 = (i * row) as usize;
-
-        let left_top = tile3[index_1 + 2][1];
-        let left_bottom = tile3[index_1 + 5][1];
-
-        let right_top = tile4[index_2 + 0][1];
-        let right_bottom = tile4[index_2 + 1][1];
-
-        mid_bottom.push((left_top + right_top) / 2.0);
-        mid_bottom.push((left_bottom + right_bottom) / 2.0);
-    }
-
-    mid_points.push(mid_top);
-    mid_points.push(mid_bottom);
-    mid_points.push(mid_left);
-    mid_points.push(mid_right);
-
-    mid_points
-}
-
 fn stitch_tiles(
     tile1: &mut [[f32; 3]],
     tile2: &mut [[f32; 3]],
     tile3: &mut [[f32; 3]],
     tile4: &mut [[f32; 3]],
     height_map: Vec<Vec<f32>>,
-    stitch: Vec<f32>,
 ) {
     let sub_quads = 2i32.pow(4.0 as u32);
     let half = sub_quads / 2;
     let points = half + 1;
-    let point = 1.0;
 
     for z in 0..half {
         for x in 0..half {
+            let index = (z * half + x) as usize;
+
             let base_1 = (z * points + x) as usize;
             let base_2 = ((z + 1) * points + x) as usize;
 
@@ -319,56 +194,39 @@ fn stitch_tiles(
             let bot_right = height_map[0][base_2 + 1];
 
             let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
-            tile1[i + 0][1] = lerp(top_left, tile1[i + 0][1], stitch[(z * 24) as usize + 0]);
-            tile1[i + 1][1] = lerp(bot_left, tile1[i + 1][1], stitch[(z * 24) as usize + 1]);
-            tile1[i + 2][1] = lerp(top_right, tile1[i + 2][1], stitch[(z * 24) as usize + 2]);
-            tile1[i + 3][1] = lerp(top_right, tile1[i + 3][1], stitch[(z * 24) as usize + 3]);
-            tile1[i + 4][1] = lerp(bot_left, tile1[i + 4][1], stitch[(z * 24) as usize + 4]);
-            tile1[i + 5][1] = lerp(bot_right, tile1[i + 5][1], stitch[(z * 24) as usize + 5]);
-
-            let top_left = height_map[1][base_1 + 0];
-            let bot_left = height_map[1][base_2 + 0];
-
-            let top_right = height_map[1][base_1 + 1];
-            let bot_right = height_map[1][base_2 + 1];
+            quad_to_triangle(tile1, &height_map[0], base_1, base_2, i);
 
             let i = (((z + half) * sub_quads + x) * 6) as usize;
-            tile2[i + 0][1] = lerp(top_left, tile2[i + 0][1], stitch[(z * 24) as usize + 6]);
-            tile2[i + 1][1] = lerp(bot_left, tile2[i + 1][1], stitch[(z * 24) as usize + 7]);
-            tile2[i + 2][1] = lerp(top_right, tile2[i + 2][1], stitch[(z * 24) as usize + 8]);
-            tile2[i + 3][1] = lerp(top_right, tile2[i + 3][1], stitch[(z * 24) as usize + 9]);
-            tile2[i + 4][1] = lerp(bot_left, tile2[i + 4][1], stitch[(z * 24) as usize + 10]);
-            tile2[i + 5][1] = lerp(bot_right, tile2[i + 5][1], stitch[(z * 24) as usize + 11]);
-
-            let top_left = height_map[2][base_1 + 0];
-            let bot_left = height_map[2][base_2 + 0];
-
-            let top_right = height_map[2][base_1 + 1];
-            let bot_right = height_map[2][base_2 + 1];
+            quad_to_triangle(tile2, &height_map[1], base_1, base_2, i);
 
             let i = ((z * sub_quads + (x + half)) * 6) as usize;
-            tile3[i + 0][1] = lerp(top_left, tile3[i + 0][1], stitch[(z * 24) as usize + 12]);
-            tile3[i + 1][1] = lerp(bot_left, tile3[i + 1][1], stitch[(z * 24) as usize + 13]);
-            tile3[i + 2][1] = lerp(top_right, tile3[i + 2][1], stitch[(z * 24) as usize + 14]);
-            tile3[i + 3][1] = lerp(top_right, tile3[i + 3][1], stitch[(z * 24) as usize + 15]);
-            tile3[i + 4][1] = lerp(bot_left, tile3[i + 4][1], stitch[(z * 24) as usize + 16]);
-            tile3[i + 5][1] = lerp(bot_right, tile3[i + 5][1], stitch[(z * 24) as usize + 17]);
-
-            let top_left = height_map[3][base_1 + 0];
-            let bot_left = height_map[3][base_2 + 0];
-
-            let top_right = height_map[3][base_1 + 1];
-            let bot_right = height_map[3][base_2 + 1];
+            quad_to_triangle(tile3, &height_map[2], base_1, base_2, i);
 
             let i = ((z * sub_quads + x) * 6) as usize;
-            tile4[i + 0][1] = lerp(top_left, tile4[i + 0][1], stitch[(z * 24) as usize + 18]);
-            tile4[i + 1][1] = lerp(bot_left, tile4[i + 1][1], stitch[(z * 24) as usize + 19]);
-            tile4[i + 2][1] = lerp(top_right, tile4[i + 2][1], stitch[(z * 24) as usize + 20]);
-            tile4[i + 3][1] = lerp(top_right, tile4[i + 3][1], stitch[(z * 24) as usize + 21]);
-            tile4[i + 4][1] = lerp(bot_left, tile4[i + 4][1], stitch[(z * 24) as usize + 22]);
-            tile4[i + 5][1] = lerp(bot_right, tile4[i + 5][1], stitch[(z * 24) as usize + 23]);
+            quad_to_triangle(tile4, &height_map[3], base_1, base_2, i);
         }
     }
+}
+
+fn quad_to_triangle(
+    tile1: &mut [[f32; 3]],
+    height_map: &Vec<f32>,
+    base_1: usize,
+    base_2: usize,
+    index: usize,
+) {
+    let top_left = ease_in_quint(height_map[base_1 + 0]);
+    let bot_left = ease_in_quint(height_map[base_2 + 0]);
+
+    let top_right = ease_in_quint(height_map[base_1 + 1]);
+    let bot_right = ease_in_quint(height_map[base_2 + 1]);
+
+    tile1[index + 0][1] = lerp(top_left, tile1[index + 0][1], MID_POINT);
+    tile1[index + 1][1] = lerp(bot_left, tile1[index + 1][1], MID_POINT);
+    tile1[index + 2][1] = lerp(top_right, tile1[index + 2][1], MID_POINT);
+    tile1[index + 3][1] = lerp(top_right, tile1[index + 3][1], MID_POINT);
+    tile1[index + 4][1] = lerp(bot_left, tile1[index + 4][1], MID_POINT);
+    tile1[index + 5][1] = lerp(bot_right, tile1[index + 5][1], MID_POINT);
 }
 
 fn multiply_core(template: &[usize; 4], observed: &[usize; 4]) -> [usize; 4] {

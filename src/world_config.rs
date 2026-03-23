@@ -11,10 +11,14 @@ use crate::world::{
 };
 
 pub fn grass_test_2() -> StaticWorld {
-    let dirt_start = TilePos::new(2, 2);
-    let dirt_stop = TilePos::new(3, 3);
-    let grass_start = TilePos::new(1, 1);
-    let grass_stop = TilePos::new(4, 4);
+    let dirt_start = TilePos::new(1, 1);
+    let dirt_stop = TilePos::new(1, 2);
+
+    let grass_start = TilePos::new(2, 1);
+    let grass_stop = TilePos::new(2, 2);
+
+    let gravel_start = TilePos::new(1, 2);
+    let gravel_stop = TilePos::new(1, 2);
 
     // let dirt_start = TilePos::new(2, 2);
     // let dirt_stop = TilePos::new(2, 2);
@@ -112,7 +116,50 @@ pub fn grass_test_2() -> StaticWorld {
                 }],
                 surface: vec![Surface {
                     positive: Range::Range(grass_start, grass_stop),
-                    negative: Range::Range(dirt_start, dirt_stop),
+                    ..Default::default() // negative: Range::Range(dirt_start, dirt_stop),
+                }],
+            },
+            WorldBlock {
+                objects: vec![Model {
+                    range: Range::None,
+                    comp: Comp::Grass(GrassConfig {
+                        color: Noise {
+                            octaves: vec![NoiseLevel {
+                                frequency: 0.01,
+                                amplitude: 1.0,
+                            }],
+                            value_1: Color::linear_rgb(0.0, 0.69, 0.22),
+                            value_2: Color::linear_rgb(0.624, 1.0, 0.745),
+                        },
+                        height: Noise {
+                            octaves: vec![
+                                NoiseLevel {
+                                    frequency: 0.1,
+                                    amplitude: 1.0,
+                                },
+                                NoiseLevel {
+                                    frequency: 5.6,
+                                    amplitude: 0.2,
+                                },
+                            ],
+                            value_1: 0.0,
+                            value_2: 1.5,
+                        },
+                        subdivisions: 4,
+                        colors: vec![
+                            Color::linear_rgb(0.9, 0.545, 0.227),
+                            Color::linear_rgb(0.6, 0.635, 0.267),
+                            Color::linear_rgb(0.8, 0.776, 0.325),
+                            Color::linear_rgb(0.4, 0.839, 0.427),
+                        ],
+                    }),
+                    path: "ground/grass".into(),
+                    tile_type: TileType::Ground,
+                    ..Default::default()
+                }],
+                surface: vec![Surface {
+                    positive: Range::Range(gravel_start, gravel_stop),
+                    ..Default::default() // negative: Range::Range(dirt_start, dirt_stop),
                 }],
             },
         ],
