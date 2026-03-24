@@ -17,13 +17,14 @@ use car::{CarPlugin, spawn::spawn_car};
 use crate::{
     car::components::Car,
     world::WorldPlugin,
-    world_config::{grass_test, grass_test_2, test_world},
+    world_config::{grass_test, grass_test_2, grass_test_3, test_world},
 };
 
 fn main() {
     // let static_world = test_world();
     // let static_world = grass_test();
     let static_world = grass_test_2();
+    // let static_world = grass_test_3();
 
     App::new()
         .add_plugins((
@@ -70,8 +71,8 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
     // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(10.0, 0.0, 10.0);
-    let offset = Transform::from_xyz(25.0, 10.0, 25.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(3.0, 0.0, 3.0);
+    let offset = Transform::from_xyz(10.0, 10.0, 10.0).looking_at(focus, Vec3::Y);
 
     // let focus = Vec3::new(60.0, 0.0, 60.0);
     // let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
