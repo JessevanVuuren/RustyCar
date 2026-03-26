@@ -10,7 +10,9 @@ use bevy::{
     render::render_resource::encase::vector::AsMutVectorParts,
 };
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter, ops::Mul};
+use rayon::prelude::*;
+use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter, ops::Mul, sync::Arc};
+use std::{thread, time::Instant};
 
 enum Stitch {
     Horizontal,
@@ -55,6 +57,22 @@ pub fn patch_ground(
     mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Grass>>,
 ) {
+    let now = Instant::now();
+    let mut calc = 0;
+    let mut hit = 0;
+    let mut height = 0;
+
+    let sub_quads = 2i32.pow(4.0 as u32);
+    let points = sub_quads + 1;
+
+    let horizontal = &smooth_bump(points, 2.0, 0.4).collect::<Vec<f32>>();
+    let vertical = &smooth_bump(points, 2.0, 0.4).collect::<Vec<f32>>();
+    let corner = &smooth_corner(points, 2.0, 0.4).collect::<Vec<f32>>();
+    let tsplit = &smooth_tsplit(points, 2.0, 0.4).collect::<Vec<f32>>();
+    let xsplit = &smooth_xsplit(points, 2.0, 0.4).collect::<Vec<f32>>();
+
+    let horizontal = &rotate(horizontal, points, 1);
+
     for block in static_world.blocks.iter() {
         let object = &block.objects[0];
 
@@ -73,11 +91,9 @@ pub fn patch_ground(
                         Range::One(place) => Box::new(place.row_major(place)),
                     };
 
-                    let range = TilePos::subtract_range(positive, negative);
+                    let range: Vec<TilePos> = TilePos::subtract_range(positive, negative).collect();
 
-                    for tile in range {
-                        println!("");
-                        println!("Tile");
+                    'tiles: for tile in range {
                         let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
                         let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
                         let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
@@ -103,81 +119,66 @@ pub fn patch_ground(
                                 && ground_bl == ground_br
                                 && ground_bl == ground_tl
                             {
-                                continue;
+                                continue 'tiles;
                             }
-
-                            let sub_quads = 2i32.pow(4.0 as u32);
-                            let points = sub_quads + 1;
-
                             let observed = [ground_tl, ground_tr, ground_bl, ground_br];
 
-                            for conf in CONFIGURATION {
-                                for i in 0..4 {
-                                    let scaler: Vec<f32> = match conf.stitch {
-                                        Stitch::Horizontal => {
-                                            let ramp: Vec<f32> =
-                                                smooth_bump(points, 2.0, 0.4).collect();
-                                            rotate(&ramp, points, 1)
-                                        }
-                                        Stitch::Vertical => smooth_bump(points, 2.0, 0.4).collect(),
-                                        Stitch::Corner => smooth_corner(points, 2.0, 0.4).collect(),
-                                        Stitch::TSplit => smooth_tsplit(points, 2.0, 0.4).collect(),
-                                        Stitch::XSplit => smooth_xsplit(points, 2.0, 0.4).collect(),
-                                    };
-
-                                    let mut result = true;
+                            'config: for conf in CONFIGURATION {
+                                'rotation: for i in 0..4 {
                                     let highest = core_highest_value(&conf.template);
                                     let mut temp = core_rotate(&conf.template, i);
 
                                     for _ in 0..highest {
                                         let ones = core_isolate_ones(&temp);
                                         let multi = core_multiply(&ones, &observed);
-                                        let uniq = core_highest_value(&multi);
 
+                                        if !core_continuity(&multi) {
+                                            continue 'rotation;
+                                        }
+
+                                        let uniq = core_highest_value(&multi);
                                         let inv = core_inverse(&ones);
                                         let inv_multi = core_multiply(&inv, &observed);
 
-                                        let res_1 = core_continuity(&multi);
-                                        let res_2 = core_contains(&inv_multi, &vec![uniq]);
-
-                                        println!(
-                                            "{:?}, {:?}, {:?}, {:?}, {}, {}",
-                                            ones, multi, temp, observed, !res_1, res_2
-                                        );
-
-                                        if !res_1 || res_2 {
-                                            result = false;
+                                        if core_contains(&inv_multi, uniq) {
+                                            continue 'rotation;
                                         }
                                         temp = core_lower_index(&temp);
                                     }
 
-                                    if result {
-                                        let (horizontal, vertical) = create_height_map(
-                                            &mut pos_tl.0,
-                                            &mut pos_tr.0,
-                                            &mut pos_bl.0,
-                                            &mut pos_br.0,
-                                        );
+                                    let scaler = match conf.stitch {
+                                        Stitch::Horizontal => horizontal,
+                                        Stitch::Vertical => vertical,
+                                        Stitch::Corner => corner,
+                                        Stitch::TSplit => tsplit,
+                                        Stitch::XSplit => xsplit,
+                                    };
 
-                                        let scaler = rotate(&scaler, points, i);
-                                        let mut height_map = map_averages(&horizontal, &vertical);
+                                    let (horizontal, vertical) = create_height_map(
+                                        &mut pos_tl.0,
+                                        &mut pos_tr.0,
+                                        &mut pos_bl.0,
+                                        &mut pos_br.0,
+                                    );
 
-                                        stitch_tiles(
-                                            &mut pos_tl.0,
-                                            &mut pos_tr.0,
-                                            &mut pos_bl.0,
-                                            &mut pos_br.0,
-                                            height_map,
-                                            scaler,
-                                        );
+                                    let height_map = map_averages(&horizontal, &vertical);
+                                    let scaler = rotate(&scaler, points, i);
 
-                                        set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
-                                        set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
-                                        set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
-                                        set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
+                                    stitch_tiles(
+                                        &mut pos_tl.0,
+                                        &mut pos_tr.0,
+                                        &mut pos_bl.0,
+                                        &mut pos_br.0,
+                                        &height_map,
+                                        &scaler,
+                                    );
 
-                                        break;
-                                    }
+                                    set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
+                                    set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
+                                    set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
+                                    set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
+
+                                    continue 'tiles;
                                 }
                             }
                         }
@@ -187,6 +188,9 @@ pub fn patch_ground(
             _ => (),
         }
     }
+
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}, calc: {}, hit: {}", elapsed, calc, hit);
 }
 
 fn map_averages(horizontal: &Vec<f32>, vertical: &Vec<f32>) -> Vec<f32> {
@@ -217,8 +221,9 @@ fn create_height_map(
     let row = sub_quads * quad_points;
     let half_row = row / 2;
 
-    let mut points_horizontal = Vec::new();
-    let mut points_vertical = Vec::new();
+    let size = ((sub_quads + 1) * (sub_quads + 1)) as usize;
+    let mut points_horizontal = Vec::with_capacity(size);
+    let mut points_vertical = Vec::with_capacity(size);
 
     for i in 0..half {
         let index_1 = ((i + half + 1) * row - half_row) as usize;
@@ -292,8 +297,8 @@ fn stitch_tiles(
     tile2: &mut [[f32; 3]],
     tile3: &mut [[f32; 3]],
     tile4: &mut [[f32; 3]],
-    height_map: Vec<f32>,
-    scaler: Vec<f32>,
+    height_map: &Vec<f32>,
+    scaler: &Vec<f32>,
 ) {
     let sub_quads = 2i32.pow(4.0 as u32);
     let half = sub_quads / 2;
@@ -304,96 +309,56 @@ fn stitch_tiles(
             let base_1 = (z * points + x) as usize;
             let base_2 = ((z + 1) * points + x) as usize;
 
-            let top_left = height_map[base_1 + 0];
-            let bot_left = height_map[base_2 + 0];
-
-            let top_right = height_map[base_1 + 1];
-            let bot_right = height_map[base_2 + 1];
-
-            let top_left_s = scaler[base_1 + 0];
-            let bot_left_s = scaler[base_2 + 0];
-
-            let top_right_s = scaler[base_1 + 1];
-            let bot_right_s = scaler[base_2 + 1];
-
             let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
-            tile1[i + 0][1] = lerp(top_left_s, tile1[i + 0][1], top_left);
-            tile1[i + 1][1] = lerp(bot_left_s, tile1[i + 1][1], bot_left);
-            tile1[i + 2][1] = lerp(top_right_s, tile1[i + 2][1], top_right);
-            tile1[i + 3][1] = lerp(top_right_s, tile1[i + 3][1], top_right);
-            tile1[i + 4][1] = lerp(bot_left_s, tile1[i + 4][1], bot_left);
-            tile1[i + 5][1] = lerp(bot_right_s, tile1[i + 5][1], bot_right);
+            quat_to_center(tile1, height_map, scaler, i, base_1, base_2);
 
             let base_1 = (z * points + x + half) as usize;
             let base_2 = ((z + 1) * points + x + half) as usize;
 
-            let top_left = height_map[base_1 + 0];
-            let bot_left = height_map[base_2 + 0];
-
-            let top_right = height_map[base_1 + 1];
-            let bot_right = height_map[base_2 + 1];
-
-            let top_left_s = scaler[base_1 + 0];
-            let bot_left_s = scaler[base_2 + 0];
-
-            let top_right_s = scaler[base_1 + 1];
-            let bot_right_s = scaler[base_2 + 1];
-
             let i = (((z + half) * sub_quads + x) * 6) as usize;
-            tile2[i + 0][1] = lerp(top_left_s, tile2[i + 0][1], top_left);
-            tile2[i + 1][1] = lerp(bot_left_s, tile2[i + 1][1], bot_left);
-            tile2[i + 2][1] = lerp(top_right_s, tile2[i + 2][1], top_right);
-            tile2[i + 3][1] = lerp(top_right_s, tile2[i + 3][1], top_right);
-            tile2[i + 4][1] = lerp(bot_left_s, tile2[i + 4][1], bot_left);
-            tile2[i + 5][1] = lerp(bot_right_s, tile2[i + 5][1], bot_right);
+            quat_to_center(tile2, height_map, scaler, i, base_1, base_2);
 
             let base_1 = ((z + half) * points + x) as usize;
             let base_2 = (((z + half) + 1) * points + x) as usize;
 
-            let top_left = height_map[base_1 + 0];
-            let bot_left = height_map[base_2 + 0];
-
-            let top_right = height_map[base_1 + 1];
-            let bot_right = height_map[base_2 + 1];
-
-            let top_left_s = scaler[base_1 + 0];
-            let bot_left_s = scaler[base_2 + 0];
-
-            let top_right_s = scaler[base_1 + 1];
-            let bot_right_s = scaler[base_2 + 1];
-
             let i = ((z * sub_quads + (x + half)) * 6) as usize;
-            tile3[i + 0][1] = lerp(top_left_s, tile3[i + 0][1], top_left);
-            tile3[i + 1][1] = lerp(bot_left_s, tile3[i + 1][1], bot_left);
-            tile3[i + 2][1] = lerp(top_right_s, tile3[i + 2][1], top_right);
-            tile3[i + 3][1] = lerp(top_right_s, tile3[i + 3][1], top_right);
-            tile3[i + 4][1] = lerp(bot_left_s, tile3[i + 4][1], bot_left);
-            tile3[i + 5][1] = lerp(bot_right_s, tile3[i + 5][1], bot_right);
+            quat_to_center(tile3, height_map, scaler, i, base_1, base_2);
 
             let base_1 = ((z + half) * points + x + half) as usize;
             let base_2 = (((z + half) + 1) * points + x + half) as usize;
 
-            let top_left = height_map[base_1 + 0];
-            let bot_left = height_map[base_2 + 0];
-
-            let top_right = height_map[base_1 + 1];
-            let bot_right = height_map[base_2 + 1];
-
-            let top_left_s = scaler[base_1 + 0];
-            let bot_left_s = scaler[base_2 + 0];
-
-            let top_right_s = scaler[base_1 + 1];
-            let bot_right_s = scaler[base_2 + 1];
-
             let i = ((z * sub_quads + x) * 6) as usize;
-            tile4[i + 0][1] = lerp(top_left_s, tile4[i + 0][1], top_left);
-            tile4[i + 1][1] = lerp(bot_left_s, tile4[i + 1][1], bot_left);
-            tile4[i + 2][1] = lerp(top_right_s, tile4[i + 2][1], top_right);
-            tile4[i + 3][1] = lerp(top_right_s, tile4[i + 3][1], top_right);
-            tile4[i + 4][1] = lerp(bot_left_s, tile4[i + 4][1], bot_left);
-            tile4[i + 5][1] = lerp(bot_right_s, tile4[i + 5][1], bot_right);
+            quat_to_center(tile4, height_map, scaler, i, base_1, base_2);
         }
     }
+}
+
+fn quat_to_center(
+    tile: &mut [[f32; 3]],
+    height: &Vec<f32>,
+    scaler: &Vec<f32>,
+    index: usize,
+    base_1: usize,
+    base_2: usize,
+) {
+    let top_left_h = height[base_1 + 0];
+    let bot_left_h = height[base_2 + 0];
+
+    let top_right_h = height[base_1 + 1];
+    let bot_right_h = height[base_2 + 1];
+
+    let top_left_s = scaler[base_1 + 0];
+    let bot_left_s = scaler[base_2 + 0];
+
+    let top_right_s = scaler[base_1 + 1];
+    let bot_right_s = scaler[base_2 + 1];
+
+    tile[index + 0][1] = lerp(top_left_s, tile[index + 0][1], top_left_h);
+    tile[index + 1][1] = lerp(bot_left_s, tile[index + 1][1], bot_left_h);
+    tile[index + 2][1] = lerp(top_right_s, tile[index + 2][1], top_right_h);
+    tile[index + 3][1] = lerp(top_right_s, tile[index + 3][1], top_right_h);
+    tile[index + 4][1] = lerp(bot_left_s, tile[index + 4][1], bot_left_h);
+    tile[index + 5][1] = lerp(bot_right_s, tile[index + 5][1], bot_right_h);
 }
 
 fn core_isolate_ones(core: &[usize; 4]) -> [usize; 4] {
@@ -469,13 +434,11 @@ fn core_rotate(core: &[usize; 4], step: usize) -> [usize; 4] {
     }
 }
 
-fn core_contains(core: &[usize; 4], numbers: &Vec<usize>) -> bool {
+fn core_contains(core: &[usize; 4], number: usize) -> bool {
     let mut flag = false;
 
-    for &number in numbers {
-        if number == core[0] || number == core[1] || number == core[2] || number == core[3] {
-            flag = true;
-        }
+    if number == core[0] || number == core[1] || number == core[2] || number == core[3] {
+        flag = true;
     }
 
     flag
