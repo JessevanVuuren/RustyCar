@@ -17,6 +17,7 @@ enum Stitch {
     Vertical,
     Corner,
     TSplit,
+    XSplit,
 }
 
 struct PatchWorks {
@@ -26,7 +27,7 @@ struct PatchWorks {
 
 const MID_POINT: f32 = 0.25;
 
-const CONFIGURATION: [PatchWorks; 3] = [
+const CONFIGURATION: [PatchWorks; 4] = [
     PatchWorks {
         stitch: Stitch::Horizontal,
         template: [1, 1, 2, 2],
@@ -38,6 +39,10 @@ const CONFIGURATION: [PatchWorks; 3] = [
     PatchWorks {
         stitch: Stitch::TSplit,
         template: [2, 1, 3, 1],
+    },
+    PatchWorks {
+        stitch: Stitch::XSplit,
+        template: [1, 2, 3, 4],
     },
 ];
 
@@ -71,6 +76,8 @@ pub fn patch_ground(
                     let range = TilePos::subtract_range(positive, negative);
 
                     for tile in range {
+                        println!("");
+                        println!("Tile");
                         let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
                         let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
                         let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
@@ -114,7 +121,8 @@ pub fn patch_ground(
                                         }
                                         Stitch::Vertical => smooth_bump(points, 2.0, 0.4).collect(),
                                         Stitch::Corner => smooth_corner(points, 2.0, 0.4).collect(),
-                                        Stitch::TSplit => vec![1.0; (points * points) as usize],
+                                        Stitch::TSplit => smooth_tsplit(points, 2.0, 0.4).collect(),
+                                        Stitch::XSplit => smooth_xsplit(points, 2.0, 0.4).collect(),
                                     };
 
                                     let mut result = true;
@@ -152,52 +160,26 @@ pub fn patch_ground(
                                         );
 
                                         let scaler = rotate(&scaler, points, i);
+                                        let mut height_map = map_averages(&horizontal, &vertical);
 
-                                        place_helper_points_horizontal(
-                                            &scaler,
-                                            &mut commands,
-                                            &mut meshes,
-                                            &mut materials,
-                                            &tile,
+                                        stitch_tiles(
+                                            &mut pos_tl.0,
+                                            &mut pos_tr.0,
+                                            &mut pos_bl.0,
+                                            &mut pos_br.0,
+                                            height_map,
+                                            scaler,
                                         );
+
+                                        set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
+                                        set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
+                                        set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
+                                        set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
+
+                                        break;
                                     }
                                 }
                             }
-
-                            // let (horizontal, vertical) = create_height_map(
-                            //     &mut pos_tl.0,
-                            //     &mut pos_tr.0,
-                            //     &mut pos_bl.0,
-                            //     &mut pos_br.0,
-                            // );
-
-                            // let mut height_map = map_averages(&horizontal, &vertical);
-
-                            // let scaler: Vec<f32> = smooth_bump(points, 2.0, 0.4).collect();
-                            // let scaler: Vec<f32> = smooth_corner(points, 2.0, 0.4).collect();
-
-                            // // place_helper_points_horizontal(
-                            // //     &scaler,
-                            // //     &mut commands,
-                            // //     &mut meshes,
-                            // //     &mut materials,
-                            // //     &tile,
-                            // // );
-
-                            // // let scaler: Vec<f32> = vec![1.0; (points * points) as usize];
-                            // stitch_tiles2(
-                            //     &mut pos_tl.0,
-                            //     &mut pos_tr.0,
-                            //     &mut pos_bl.0,
-                            //     &mut pos_br.0,
-                            //     height_map,
-                            //     scaler,
-                            // );
-
-                            // set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
-                            // set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
-                            // set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
-                            // set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
                         }
                     }
                 }
@@ -260,7 +242,7 @@ fn place_helper_points_horizontal(
 
     let offset_x = (offset.x * 4) as f32;
     let offset_z = (offset.z * 4) as f32;
-    let offset_y = 1.0;
+    let offset_y = 3.0;
     let step = 4.0 / (size - 1.0) as f32;
 
     for (i, p) in height_map.iter().enumerate() {
@@ -357,7 +339,7 @@ fn points_along_line(start: f32, stop: f32, points: i32) -> Vec<f32> {
     data
 }
 
-fn stitch_tiles2(
+fn stitch_tiles(
     tile1: &mut [[f32; 3]],
     tile2: &mut [[f32; 3]],
     tile3: &mut [[f32; 3]],
@@ -466,60 +448,6 @@ fn stitch_tiles2(
     }
 }
 
-fn stitch_tiles(
-    tile1: &mut [[f32; 3]],
-    tile2: &mut [[f32; 3]],
-    tile3: &mut [[f32; 3]],
-    tile4: &mut [[f32; 3]],
-    height_map: Vec<Vec<f32>>,
-) {
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let half = sub_quads / 2;
-    let points = half + 1;
-
-    for z in 0..half {
-        for x in 0..half {
-            let index = (z * half + x) as usize;
-
-            let base_1 = (z * points + x) as usize;
-            let base_2 = ((z + 1) * points + x) as usize;
-
-            let i = (((z + half) * sub_quads + (x + half)) * 6) as usize;
-            quad_to_triangle(tile1, &height_map[0], base_1, base_2, i);
-
-            let i = (((z + half) * sub_quads + x) * 6) as usize;
-            quad_to_triangle(tile2, &height_map[1], base_1, base_2, i);
-
-            let i = ((z * sub_quads + (x + half)) * 6) as usize;
-            quad_to_triangle(tile3, &height_map[2], base_1, base_2, i);
-
-            let i = ((z * sub_quads + x) * 6) as usize;
-            quad_to_triangle(tile4, &height_map[3], base_1, base_2, i);
-        }
-    }
-}
-
-fn quad_to_triangle(
-    tile1: &mut [[f32; 3]],
-    height_map: &Vec<f32>,
-    base_1: usize,
-    base_2: usize,
-    index: usize,
-) {
-    let top_left = ease_in_quint(height_map[base_1 + 0]);
-    let bot_left = ease_in_quint(height_map[base_2 + 0]);
-
-    let top_right = ease_in_quint(height_map[base_1 + 1]);
-    let bot_right = ease_in_quint(height_map[base_2 + 1]);
-
-    tile1[index + 0][1] = lerp(top_left, tile1[index + 0][1], MID_POINT);
-    tile1[index + 1][1] = lerp(bot_left, tile1[index + 1][1], MID_POINT);
-    tile1[index + 2][1] = lerp(top_right, tile1[index + 2][1], MID_POINT);
-    tile1[index + 3][1] = lerp(top_right, tile1[index + 3][1], MID_POINT);
-    tile1[index + 4][1] = lerp(bot_left, tile1[index + 4][1], MID_POINT);
-    tile1[index + 5][1] = lerp(bot_right, tile1[index + 5][1], MID_POINT);
-}
-
 fn core_isolate_ones(core: &[usize; 4]) -> [usize; 4] {
     [
         if core[0] == 1 { 1 } else { 0 },
@@ -624,6 +552,36 @@ fn rotate<T: Copy>(array: &[T], size: i32, step: usize) -> Vec<T> {
     rotated
 }
 
+fn smooth_xsplit(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
+    let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
+    let horizontal: Vec<f32> = rotate(&vertical, size, 1);
+
+    (0..size * size).map(move |i| {
+        let x = i % size;
+        let y = i / size;
+
+        horizontal[i as usize].max(vertical[i as usize])
+    })
+}
+
+fn smooth_tsplit(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
+    let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
+    let horizontal: Vec<f32> = rotate(&vertical, size, 1);
+
+    let half = size / 2;
+
+    (0..size * size).map(move |i| {
+        let x = i % size;
+        let y = i / size;
+
+        if x > half {
+            vertical[i as usize]
+        } else {
+            horizontal[i as usize].max(vertical[i as usize])
+        }
+    })
+}
+
 fn smooth_corner(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
     let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
     let horizontal: Vec<f32> = rotate(&vertical, size, 1);
@@ -633,6 +591,10 @@ fn smooth_corner(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item =
     (0..size * size).map(move |i| {
         let x = i % size;
         let y = i / size;
+
+        // if x == 0 || x == (size - 1) || y == 0 || y == (size - 1) {
+        //     return 0.0;
+        // }
 
         if x < half && y < half {
             horizontal[i as usize]
@@ -661,6 +623,11 @@ fn smooth_bump(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f
     let half = size / 2;
     (0..size * size).map(move |i| {
         let x = i % size;
+        let y = i / size;
+
+        // if (x == 0 || x == (size - 1) || y == 0 || y == (size - 1)) && y != half && x != half {
+        //     return 0.0;
+        // }
 
         if x < spread {
             0.0
