@@ -205,58 +205,6 @@ fn map_averages(horizontal: &Vec<f32>, vertical: &Vec<f32>) -> Vec<f32> {
     average
 }
 
-fn place_helper_points_vertical(
-    height_map: &Vec<f32>,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    offset: &TilePos,
-) {
-    let size = (height_map.len() as f32).sqrt();
-
-    let offset_x = (offset.x * 4) as f32;
-    let offset_z = (offset.z * 4) as f32;
-    let offset_y = 3.0;
-    let step = 4.0 / (size - 1.0) as f32;
-
-    for (i, p) in height_map.iter().enumerate() {
-        let x = (i / size as usize) as f32;
-        let z = (i % size as usize) as f32;
-
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(0.05))),
-            MeshMaterial3d(materials.add(Color::srgb_u8(255, 255, 255))),
-            Transform::from_xyz(offset_x + x * step, offset_y + p, offset_z + z * step),
-        ));
-    }
-}
-
-fn place_helper_points_horizontal(
-    height_map: &Vec<f32>,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    offset: &TilePos,
-) {
-    let size = (height_map.len() as f32).sqrt();
-
-    let offset_x = (offset.x * 4) as f32;
-    let offset_z = (offset.z * 4) as f32;
-    let offset_y = 3.0;
-    let step = 4.0 / (size - 1.0) as f32;
-
-    for (i, p) in height_map.iter().enumerate() {
-        let x = (i % size as usize) as f32;
-        let z = (i / size as usize) as f32;
-
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(0.05))),
-            MeshMaterial3d(materials.add(Color::srgb_u8(255, 255, 255))),
-            Transform::from_xyz(offset_x + x * step, offset_y + p, offset_z + z * step),
-        ));
-    }
-}
-
 fn create_height_map(
     tile1: &mut [[f32; 3]],
     tile2: &mut [[f32; 3]],
@@ -592,10 +540,6 @@ fn smooth_corner(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item =
         let x = i % size;
         let y = i / size;
 
-        // if x == 0 || x == (size - 1) || y == 0 || y == (size - 1) {
-        //     return 0.0;
-        // }
-
         if x < half && y < half {
             horizontal[i as usize]
         } else if x > half && y > half {
@@ -608,26 +552,12 @@ fn smooth_corner(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item =
     })
 }
 
-fn rounded_cone(size: i32, intensity: f32) -> impl Iterator<Item = f32> {
-    let half = size / 2;
-    (0..size * size).map(move |i| {
-        let x = ((i % size) - half) as f32 / half as f32;
-        let y = ((i / size) - half) as f32 / half as f32;
-
-        ((y * FRAC_PI_2).cos() * (x * FRAC_PI_2).cos()).powf(intensity)
-    })
-}
-
 fn smooth_bump(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
     let spread = (size as f32 * spread) as i32 / 2;
     let half = size / 2;
     (0..size * size).map(move |i| {
         let x = i % size;
         let y = i / size;
-
-        // if (x == 0 || x == (size - 1) || y == 0 || y == (size - 1)) && y != half && x != half {
-        //     return 0.0;
-        // }
 
         if x < spread {
             0.0
@@ -640,34 +570,6 @@ fn smooth_bump(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f
         } else {
             0.0
         }
-    })
-}
-
-fn ramp_map(size: i32) -> impl Iterator<Item = f32> {
-    (0..size * size).map(move |i| {
-        let x = (i % size) as f32;
-        let n = (size - 1) as f32;
-
-        x / n
-    })
-}
-
-fn curve_map(size: i32) -> impl Iterator<Item = f32> {
-    (0..size * size).map(move |i| {
-        let x = (i % size) as f32;
-        let y = (i / size) as f32;
-        let n = (size - 1) as f32;
-
-        x * y / (n * n)
-    })
-}
-
-fn reverse_map(size: i32) -> impl Iterator<Item = f32> {
-    (0..size * size).map(move |i| {
-        let x = (i % size) as f32 / (size - 1) as f32;
-        let y = (i / size) as f32 / (size - 1) as f32;
-
-        x + y - x * y
     })
 }
 
