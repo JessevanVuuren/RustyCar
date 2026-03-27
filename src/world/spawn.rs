@@ -3,7 +3,8 @@ use crate::world::{
         Comp, Grass, GrassConfig, Ground, Model, Offset, Placement, Range, Rotation, StaticWorld,
         TilePos, TileType, TileWorld, Value,
     },
-    grass::ground_plane,
+    ground::ground::ground_plane,
+    utils::range_from_surface,
 };
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
@@ -24,19 +25,7 @@ pub fn init_static_world(
     for (layer_id, block) in static_world.blocks.iter().enumerate() {
         for object in block.objects.iter() {
             for surface in block.surface.iter() {
-                let positive = match surface.positive {
-                    Range::None => panic!("Surface range cant be None"),
-                    Range::Range(start, stop) => start.row_major(stop),
-                    Range::One(place) => place.row_major(place),
-                };
-
-                let negative: Box<dyn Iterator<Item = TilePos>> = match surface.negative {
-                    Range::None => Box::new(iter::empty()),
-                    Range::Range(start, stop) => Box::new(start.row_major(stop)),
-                    Range::One(place) => Box::new(place.row_major(place)),
-                };
-
-                let range = TilePos::subtract_range(positive, negative);
+                let range = range_from_surface(surface);
 
                 match object.placement.amount {
                     Value::Random(low, high) => {}

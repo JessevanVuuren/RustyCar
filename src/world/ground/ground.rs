@@ -94,12 +94,6 @@ pub fn ground_plane(
             let top_right = (height_map[base_1 + 1] + height.value_1) * height.value_2;
             let bot_right = (height_map[base_2 + 1] + height.value_1) * height.value_2;
 
-            // let top_left = 0.0;
-            // let bot_left = 0.0;
-
-            // let top_right = 0.0;
-            // let bot_right = 0.0;
-
             positions.push([x0, top_left, z0]);
             positions.push([x0, bot_left, z1]);
             positions.push([x1, top_right, z0]);

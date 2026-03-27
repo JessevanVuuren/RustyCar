@@ -1,8 +1,12 @@
 use crate::{
     extra::math::{ease_in_quint, lerp, s_curve},
-    world::components::{
-        Comp, Grass, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld,
-        TILE_SIZE, TilePos, TileType, TileWorld, Value,
+    world::{
+        components::{
+            Comp, Grass, GrassConfig, Model, Offset, Placement, Range, Rotation, StaticWorld,
+            TILE_SIZE, TilePos, TileType, TileWorld, Value,
+        },
+        ground::mesh_utils::{set_mesh_position, tile_mesh_positions},
+        utils::range_from_surface,
     },
 };
 use bevy::{
@@ -27,8 +31,6 @@ struct PatchWorks {
     stitch: Stitch,
 }
 
-const MID_POINT: f32 = 0.25;
-
 const CONFIGURATION: [PatchWorks; 4] = [
     PatchWorks {
         stitch: Stitch::Horizontal,
@@ -48,7 +50,7 @@ const CONFIGURATION: [PatchWorks; 4] = [
     },
 ];
 
-pub fn patch_ground(
+pub fn ground_fade(
     mut commands: Commands,
     static_world: Res<StaticWorld>,
     mut world: ResMut<TileWorld>,
@@ -57,11 +59,6 @@ pub fn patch_ground(
     mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Grass>>,
 ) {
-    let now = Instant::now();
-    let mut calc = 0;
-    let mut hit = 0;
-    let mut height = 0;
-
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads + 1;
 
@@ -79,19 +76,7 @@ pub fn patch_ground(
         match &object.comp {
             Comp::Grass(config) => {
                 for surface in block.surface.iter() {
-                    let positive = match surface.positive {
-                        Range::None => panic!("Surface range cant be None"),
-                        Range::Range(start, stop) => start.row_major(stop),
-                        Range::One(place) => place.row_major(place),
-                    };
-
-                    let negative: Box<dyn Iterator<Item = TilePos>> = match surface.negative {
-                        Range::None => Box::new(iter::empty()),
-                        Range::Range(start, stop) => Box::new(start.row_major(stop)),
-                        Range::One(place) => Box::new(place.row_major(place)),
-                    };
-
-                    let range: Vec<TilePos> = TilePos::subtract_range(positive, negative).collect();
+                    let range = range_from_surface(surface);
 
                     'tiles: for tile in range {
                         let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
@@ -188,9 +173,6 @@ pub fn patch_ground(
             _ => (),
         }
     }
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}, calc: {}, hit: {}", elapsed, calc, hit);
 }
 
 fn map_averages(horizontal: &Vec<f32>, vertical: &Vec<f32>) -> Vec<f32> {
@@ -534,48 +516,4 @@ fn smooth_bump(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f
             0.0
         }
     })
-}
-
-fn tile_mesh_positions(
-    world: &TileWorld,
-    tile: TilePos,
-    query: &Query<&Mesh3d, With<Grass>>,
-    meshes: &Assets<Mesh>,
-) -> Option<(Vec<[f32; 3]>, Handle<Mesh>)> {
-    if let Some(handle) = mesh_on_tile(&world, tile, &query) {
-        if let Some(mut pos) = get_mesh_positions(&meshes, &handle) {
-            return Some((pos, handle));
-        }
-    }
-
-    None
-}
-
-fn set_mesh_position(positions: &Vec<[f32; 3]>, handle: &Handle<Mesh>, meshes: &mut Assets<Mesh>) {
-    if let Some(mesh) = meshes.get_mut(handle) {
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions.clone());
-        mesh.compute_flat_normals();
-    }
-}
-
-fn get_mesh_positions(meshes: &Assets<Mesh>, handle: &Handle<Mesh>) -> Option<Vec<[f32; 3]>> {
-    let mesh = meshes.get(handle)?;
-    match mesh.attribute(Mesh::ATTRIBUTE_POSITION)? {
-        VertexAttributeValues::Float32x3(pos) => Some(pos.clone()),
-        _ => None,
-    }
-}
-
-fn mesh_on_tile(
-    world: &TileWorld,
-    tile: TilePos,
-    query: &Query<&Mesh3d, With<Grass>>,
-) -> Option<Handle<Mesh>> {
-    if let Some(t) = world.ground.get(&tile) {
-        if let Ok(mesh3d) = query.get(t.entity.entity()) {
-            return Some(mesh3d.0.clone());
-        }
-    }
-
-    None
 }
