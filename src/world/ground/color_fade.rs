@@ -35,8 +35,6 @@ pub fn color_fade(
     mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Grass>>,
 ) {
-    let now = Instant::now();
-
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads;
 
@@ -142,9 +140,6 @@ pub fn color_fade(
             _ => (),
         }
     }
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
 }
 
 fn color_to_key(color: [f32; 4]) -> [i32; 4] {
