@@ -8,6 +8,7 @@ bevy = { version = "0.18.0", features = ["dynamic_linking", "bevy_dev_tools"] }
 bevy_panorbit_camera = "0.34.0"
 noise = "0.9.0"
 rand = "0.10.0"
+rand_distr = "0.6.0"
 rayon = "1.11.0"
 
 [profile.dev]

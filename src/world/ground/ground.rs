@@ -102,7 +102,7 @@ pub fn ground_plane(
             positions.push([x0, bot_left, z1]);
             positions.push([x1, bot_right, z1]);
 
-            // color
+
             let color_index = rng.random_range(0..r_colors.len());
             let random_color = r_colors[color_index].to_linear();
 

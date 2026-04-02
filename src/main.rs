@@ -22,9 +22,9 @@ use crate::{
 
 fn main() {
     // let static_world = test_world();
-    // let static_world = large_grass_test();
+    let static_world = large_grass_test();
     // let static_world = lots_of_patches();
-    let static_world = small_grass();
+    // let static_world = small_grass();
 
     App::new()
         .add_plugins((
@@ -80,6 +80,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         DirectionalLight {
             color: Color::srgb(1., 0.95, 0.7),
+            // color: Color::srgb(1., 1.0, 1.0),
             illuminance: 5_000.,
             shadows_enabled: true,
             ..default()

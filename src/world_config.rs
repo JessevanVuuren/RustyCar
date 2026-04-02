@@ -11,10 +11,14 @@ use crate::world::{
 };
 
 pub fn small_grass() -> StaticWorld {
-    let dirt_start = TilePos::new(2, 2);
-    let dirt_stop = TilePos::new(3, 3);
+    let dirt_start = TilePos::new(3, 3);
+    let dirt_stop = TilePos::new(6, 6);
     let grass_start = TilePos::new(1, 1);
-    let grass_stop = TilePos::new(4, 4);
+    let grass_stop = TilePos::new(8, 8);
+    // let dirt_start = TilePos::new(1, 1);
+    // let dirt_stop = TilePos::new(2, 1);
+    // let grass_start = TilePos::new(1, 2);
+    // let grass_stop = TilePos::new(2, 2);
 
     StaticWorld {
         blocks: vec![
@@ -27,6 +31,8 @@ pub fn small_grass() -> StaticWorld {
                                 frequency: 0.1,
                                 amplitude: 1.0,
                             }],
+                            // value_1: Color::linear_rgb(0.678, 0.369, 0.012),
+                            // value_2: Color::linear_rgb(0.275, 0.412, 0.0),
                             value_1: Color::linear_rgb(0.678, 0.369, 0.012),
                             value_2: Color::linear_rgb(0.275, 0.412, 0.0),
                         },
