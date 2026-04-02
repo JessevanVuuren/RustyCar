@@ -49,11 +49,15 @@ pub fn color_fade(
                     'tiles: for tile in range {
                         let ground = world.ground.get(&tile).map_or(0, |f| f.id);
 
+                        if avg_colors.contains_key(&ground) {
+                            continue 'tiles;
+                        }
+
                         if let Some((mut color, handler)) =
                             tile_mesh_colors(&world, tile, &query, &meshes)
                         {
                             let info = tile_color_info(&color);
-                            avg_colors.insert(tile, info);
+                            avg_colors.insert(ground, info);
                         }
                     }
                 }
@@ -100,36 +104,56 @@ pub fn color_fade(
                                 continue 'tiles;
                             }
 
-                            if ground_tl == ground_tr && ground_bl == ground_br {
-                                let scaler: Vec<f32> = ramp_map(points, 2.0).collect();
-                                let scaler = &rotate(&scaler, points, 1);
+                            let info_tl = &avg_colors[&ground_tl];
+                            let info_tr = &avg_colors[&ground_tr];
+                            let info_bl = &avg_colors[&ground_bl];
+                            let info_br = &avg_colors[&ground_br];
 
-                                mix_colors(
-                                    &mut rng,
-                                    &avg_colors[&tile_tl],
-                                    &avg_colors[&tile_tr],
-                                    &avg_colors[&tile_bl],
-                                    &avg_colors[&tile_br],
-                                    &mut color_tl,
-                                    &mut color_tr,
-                                    &mut color_bl,
-                                    &mut color_br,
-                                    &scaler,
-                                );
-                            } else if ground_tl == ground_bl && ground_tr == ground_br {
-                                let scaler: Vec<f32> = ramp_map(points, 2.0).collect();
-                                mix_colors(
-                                    &mut rng,
-                                    &avg_colors[&tile_tl],
-                                    &avg_colors[&tile_bl],
-                                    &avg_colors[&tile_tr],
-                                    &avg_colors[&tile_br],
-                                    &mut color_tl,
-                                    &mut color_tr,
-                                    &mut color_bl,
-                                    &mut color_br,
-                                    &scaler,
-                                );
+                            let scaler: Vec<f32> = ramp_map(points, 2.0).collect();
+
+                            if ground_tl == ground_tr
+                                && ground_bl == ground_br
+                                && ground_tl != ground_bl
+                                && ground_tr != ground_br
+                            {
+                                let scaler = rotate(&scaler, points, 1);
+
+                                mix_tile(&mut rng, &mut color_tl, &info_tl.0, &info_bl.1, &scaler);
+                                mix_tile(&mut rng, &mut color_tr, &info_tr.0, &info_br.1, &scaler);
+
+                                let scaler = rotate(&scaler, points, 2);
+                                mix_tile(&mut rng, &mut color_bl, &info_bl.0, &info_tl.1, &scaler);
+                                mix_tile(&mut rng, &mut color_br, &info_br.0, &info_tr.1, &scaler);
+                            } else if ground_tl == ground_bl
+                                && ground_tr == ground_br
+                                && ground_tl != ground_tr
+                                && ground_bl != ground_br
+                            {
+                                mix_tile(&mut rng, &mut color_tl, &info_tl.0, &info_tr.1, &scaler);
+                                mix_tile(&mut rng, &mut color_bl, &info_bl.0, &info_br.1, &scaler);
+
+                                let scaler = rotate(&scaler, points, 2);
+                                mix_tile(&mut rng, &mut color_br, &info_br.0, &info_bl.1, &scaler);
+                                mix_tile(&mut rng, &mut color_tr, &info_tr.0, &info_tl.1, &scaler);
+                            } else {
+                                let scaler: Vec<f32> = corner_map(points, 2.0).collect();
+    
+                                let mut paint = Vec::new();
+                                paint.extend_from_slice(&info_tl.1);
+                                paint.extend_from_slice(&info_tr.1);
+                                paint.extend_from_slice(&info_bl.1);
+                                paint.extend_from_slice(&info_br.1);
+    
+                                mix_tile(&mut rng, &mut color_tl, &info_tl.0, &paint, &scaler);
+                                let scaler = rotate(&scaler, points, 1);
+    
+                                mix_tile(&mut rng, &mut color_tr, &info_tr.0, &paint, &scaler);
+                                let scaler = rotate(&scaler, points, 1);
+    
+                                mix_tile(&mut rng, &mut color_br, &info_br.0, &paint, &scaler);
+                                let scaler = rotate(&scaler, points, 1);
+    
+                                mix_tile(&mut rng, &mut color_bl, &info_bl.0, &paint, &scaler);
                             }
 
                             set_mesh_colors(&color_tl, &handler_tl, &mut meshes);
@@ -235,6 +259,58 @@ fn tile_color_info(tile: &[[f32; 4]]) -> ([f32; 4], Vec<[i32; 4]>) {
     (color, colors.iter().copied().collect())
 }
 
+fn mix_tile(
+    rng: &mut SmallRng,
+    tile: &mut [[f32; 4]],
+    average: &[f32; 4],
+    colors: &Vec<[i32; 4]>,
+    scaler: &Vec<f32>,
+) {
+    let sub_quads = 2i32.pow(4.0 as u32);
+    let points = sub_quads - 1;
+
+    for _ in 0..SAMPLES {
+        let (x, z) = random_xz(rng, points);
+        let i = ((points - z) * sub_quads + (points - x)) as usize;
+
+        let color_rand = colors[rng.random_range(0..colors.len()) as usize];
+        let color_lerp = lerp_color_attrib(scaler[i], *average, key_to_color(color_rand));
+
+        tile[i * 6 + 0] = color_lerp;
+        tile[i * 6 + 1] = color_lerp;
+        tile[i * 6 + 2] = color_lerp;
+        tile[i * 6 + 3] = color_lerp;
+        tile[i * 6 + 4] = color_lerp;
+        tile[i * 6 + 5] = color_lerp;
+    }
+}
+
+fn place_helper_points_horizontal(
+    height_map: &Vec<f32>,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+    offset: &TilePos,
+) {
+    let size = (height_map.len() as f32).sqrt();
+
+    let offset_x = (offset.x * 4) as f32;
+    let offset_z = (offset.z * 4) as f32;
+    let offset_y = 3.0;
+    let step = 4.0 / (size - 1.0) as f32;
+
+    for (i, p) in height_map.iter().enumerate() {
+        let x = (i % size as usize) as f32;
+        let z = (i / size as usize) as f32;
+
+        commands.spawn((
+            Mesh3d(meshes.add(Sphere::new(0.05))),
+            MeshMaterial3d(materials.add(Color::srgb_u8(255, 255, 255))),
+            Transform::from_xyz(offset_x + x * step, offset_y + p, offset_z + z * step),
+        ));
+    }
+}
+
 fn mix_colors(
     rng: &mut SmallRng,
     info1: &([f32; 4], Vec<[i32; 4]>),
@@ -309,6 +385,11 @@ fn ramp_map(size: i32, intensity: f32) -> impl Iterator<Item = f32> {
     (0..size * size).map(move |i| (i % size) as f32 / (size - 1) as f32)
 }
 
+fn corner_map(size: i32, intensity: f32) -> impl Iterator<Item = f32> {
+    (0..size * size)
+        .map(move |i| ((i % size) * (i / size)) as f32 / ((size - 1) * (size - 1)) as f32)
+}
+
 fn rotate<T: Copy>(array: &[T], size: i32, step: usize) -> Vec<T> {
     let mut rotated = Vec::with_capacity((size * size) as usize);
 
@@ -326,30 +407,4 @@ fn rotate<T: Copy>(array: &[T], size: i32, step: usize) -> Vec<T> {
     }
 
     rotated
-}
-
-fn place_helper_points_horizontal(
-    height_map: &Vec<f32>,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    offset: &TilePos,
-) {
-    let size = (height_map.len() as f32).sqrt();
-
-    let offset_x = (offset.x * 4) as f32 - 2.0;
-    let offset_z = (offset.z * 4) as f32 - 2.0;
-    let offset_y = 1.0;
-    let step = 4.0 / (size - 1.0) as f32;
-
-    for (i, p) in height_map.iter().enumerate() {
-        let x = (i % size as usize) as f32;
-        let z = (i / size as usize) as f32;
-
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(0.05))),
-            MeshMaterial3d(materials.add(Color::srgb_u8(255, 255, 255))),
-            Transform::from_xyz(offset_x + x * step, offset_y + p, offset_z + z * step),
-        ));
-    }
 }
