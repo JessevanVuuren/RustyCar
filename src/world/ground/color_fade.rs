@@ -24,6 +24,7 @@ use std::{collections::HashSet, iter};
 
 const PRECISION: i32 = 1000;
 const SAMPLES: usize = 100;
+const SPREAD: f32 = 0.4;
 
 pub fn color_fade(
     mut commands: Commands,
@@ -38,22 +39,14 @@ pub fn color_fade(
 
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads;
-    let points1 = sub_quads - 1;
 
     let mut rng = SmallRng::seed_from_u64(1604);
     let mut avg_colors = HashMap::new();
 
-    let map_tl: Vec<f32> = corner_map(points, 0.4).collect();
+    let map_tl: Vec<f32> = corner_map(points, SPREAD).collect();
     let map_tr = rotate(&map_tl, points, 1);
     let map_bl = rotate(&map_tr, points, 2);
     let map_br = rotate(&map_bl, points, 3);
-
-
-
-    let random_tl = (0..SAMPLES).map(|_| random_xz(&mut rng, points1)).collect();
-    let random_tr = (0..SAMPLES).map(|_| random_xz(&mut rng, points1)).collect();
-    let random_bl = (0..SAMPLES).map(|_| random_xz(&mut rng, points1)).collect();
-    let random_br = (0..SAMPLES).map(|_| random_xz(&mut rng, points1)).collect();
 
     for i in 0..static_world.blocks.iter().len() {
         let block = &static_world.blocks[i];
@@ -133,67 +126,10 @@ pub fn color_fade(
                             paint.extend_from_slice(&info_bl.1);
                             paint.extend_from_slice(&info_br.1);
 
-                            // place_helper_points_horizontal(
-                            //     &map_tl,
-                            //     &mut commands,
-                            //     &mut meshes,
-                            //     &mut materials,
-                            //     &tile_tl,
-                            // );
-                            // place_helper_points_horizontal(
-                            //     &map_tr,
-                            //     &mut commands,
-                            //     &mut meshes,
-                            //     &mut materials,
-                            //     &tile_tr,
-                            // );
-                            // place_helper_points_horizontal(
-                            //     &map_br,
-                            //     &mut commands,
-                            //     &mut meshes,
-                            //     &mut materials,
-                            //     &tile_br,
-                            // );
-                            // place_helper_points_horizontal(
-                            //     &map_bl,
-                            //     &mut commands,
-                            //     &mut meshes,
-                            //     &mut materials,
-                            //     &tile_bl,
-                            // );
-
-                            mix_tile(
-                                &mut rng,
-                                &mut color_tl,
-                                &random_tl,
-                                &info_tl.0,
-                                &paint,
-                                &map_tl,
-                            );
-                            mix_tile(
-                                &mut rng,
-                                &mut color_tr,
-                                &random_tr,
-                                &info_tr.0,
-                                &paint,
-                                &map_tr,
-                            );
-                            mix_tile(
-                                &mut rng,
-                                &mut color_br,
-                                &random_bl,
-                                &info_br.0,
-                                &paint,
-                                &map_br,
-                            );
-                            mix_tile(
-                                &mut rng,
-                                &mut color_bl,
-                                &random_br,
-                                &info_bl.0,
-                                &paint,
-                                &map_bl,
-                            );
+                            mix_tile(&mut rng, &mut color_tl, &info_tl.0, &paint, &map_tl);
+                            mix_tile(&mut rng, &mut color_tr, &info_tr.0, &paint, &map_tr);
+                            mix_tile(&mut rng, &mut color_br, &info_br.0, &paint, &map_br);
+                            mix_tile(&mut rng, &mut color_bl, &info_bl.0, &paint, &map_bl);
 
                             set_mesh_colors(&color_tl, &handler_tl, &mut meshes);
                             set_mesh_colors(&color_tr, &handler_tr, &mut meshes);
@@ -229,11 +165,6 @@ fn key_to_color(key: [i32; 4]) -> [f32; 4] {
     ]
 }
 
-fn color_to_attrib(c: Color) -> [f32; 4] {
-    let c = c.to_linear();
-    [c.red, c.green, c.blue, 1.0]
-}
-
 fn random_xz(rng: &mut SmallRng, size: i32) -> (i32, i32) {
     (
         (rng.random::<f32>() * size as f32) as i32,
@@ -253,10 +184,6 @@ fn avg_color_attrib(color: &mut [f32; 4], amount: i32) {
     color[1] /= amount as f32;
     color[2] /= amount as f32;
     color[3] /= amount as f32;
-}
-
-fn value_color_attrib(value: f32) -> [f32; 4] {
-    [value, value, value, 1.0]
 }
 
 fn lerp_color_attrib(t: f32, color1: [f32; 4], color2: [f32; 4]) -> [f32; 4] {
@@ -289,7 +216,6 @@ fn tile_color_info(tile: &[[f32; 4]]) -> ([f32; 4], Vec<[i32; 4]>) {
 fn mix_tile(
     rng: &mut SmallRng,
     tile: &mut [[f32; 4]],
-    random_map: &Vec<(i32, i32)>,
     average: &[f32; 4],
     colors: &Vec<[i32; 4]>,
     scaler: &Vec<f32>,
@@ -297,10 +223,9 @@ fn mix_tile(
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads - 1;
 
-    for i in 0..SAMPLES {
-        // let (x, z) = random_xz(rng, points);
-        let (x, z) = random_map[i];
-        let i = ((points - z) * sub_quads + (points - x)) as usize;
+    for _ in 0..SAMPLES {
+        let (x, z) = random_xz(rng, points);
+        let i = (z * sub_quads + x) as usize;
 
         let color_rand = colors[rng.random_range(0..colors.len()) as usize];
         let color_lerp = lerp_color_attrib(scaler[i], *average, key_to_color(color_rand));
@@ -311,32 +236,6 @@ fn mix_tile(
         tile[i * 6 + 3] = color_lerp;
         tile[i * 6 + 4] = color_lerp;
         tile[i * 6 + 5] = color_lerp;
-    }
-}
-
-fn place_helper_points_horizontal(
-    height_map: &Vec<f32>,
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<StandardMaterial>>,
-    offset: &TilePos,
-) {
-    let size = (height_map.len() as f32).sqrt();
-
-    let offset_x = (offset.x * 4) as f32;
-    let offset_z = (offset.z * 4) as f32;
-    let offset_y = 3.0;
-    let step = 4.0 / (size - 1.0) as f32;
-
-    for (i, p) in height_map.iter().enumerate() {
-        let x = (i % size as usize) as f32;
-        let z = (i / size as usize) as f32;
-
-        commands.spawn((
-            Mesh3d(meshes.add(Sphere::new(0.05))),
-            MeshMaterial3d(materials.add(Color::srgb_u8(255, 255, 255))),
-            Transform::from_xyz(offset_x + x * step, offset_y + p, offset_z + z * step),
-        ));
     }
 }
 
