@@ -17,7 +17,7 @@ use car::{CarPlugin, spawn::spawn_car};
 use crate::{
     car::components::Car,
     world::WorldPlugin,
-    world_config::{large_grass_test, small_grass, test_world},
+    world_config::{large_grass_test, multiple_surface, small_grass, test_world},
 };
 
 fn main() {
@@ -25,6 +25,7 @@ fn main() {
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
     // let static_world = small_grass();
+    // let static_world = multiple_surface();
 
     App::new()
         .add_plugins((

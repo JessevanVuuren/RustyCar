@@ -16,13 +16,13 @@ pub struct StaticWorld {
 #[derive(Clone, Debug)]
 pub struct WorldBlock {
     pub objects: Vec<Model>,
-    pub surface: Vec<Surface>,
+    pub surface: Surface,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct Surface {
-    pub positive: Range<TilePos>,
-    pub negative: Range<TilePos>,
+    pub positive: Vec<Range<TilePos>>,
+    pub negative: Vec<Range<TilePos>>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -82,13 +82,28 @@ pub enum Value<T> {
 }
 
 #[derive(Component)]
-pub struct Grass;
+pub struct Land;
+#[derive(Component)]
+pub struct Rock;
+#[derive(Component)]
+pub struct Mushroom;
+#[derive(Component)]
+pub struct Flower;
+#[derive(Component)]
+pub struct Fence;
+#[derive(Component)]
+pub struct Tree;
+#[derive(Component)]
+pub struct Dirt;
+#[derive(Component)]
+pub struct Log;
+
 
 #[derive(Component, Clone, Debug, Default)]
 pub enum Comp {
     Mushroom,
     Flower,
-    Grass(GrassConfig),
+    Land(GrassConfig),
     Fence,
     Tree,
     Rock,
@@ -130,8 +145,6 @@ pub struct Ground {
     pub entity: Entity,
     pub id: usize,
 }
-
-
 
 #[derive(Component, Copy, Clone, PartialEq, Eq, Hash, Default, Debug)]
 pub struct TilePos {

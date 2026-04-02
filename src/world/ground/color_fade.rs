@@ -4,7 +4,7 @@ use crate::{
         utils::rotate,
     },
     world::{
-        components::{Comp, Grass, Range, StaticWorld, TilePos, TileWorld},
+        components::{Comp, Land, Range, StaticWorld, TilePos, TileWorld},
         ground::mesh_utils::{set_mesh_colors, tile_mesh_colors, tile_mesh_positions},
         utils::range_from_surface,
     },
@@ -33,7 +33,7 @@ pub fn color_fade(
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<&Mesh3d, With<Grass>>,
+    query: Query<&Mesh3d, With<Land>>,
 ) {
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads;
@@ -51,23 +51,21 @@ pub fn color_fade(
         let object = &block.objects[0];
 
         match &object.comp {
-            Comp::Grass(config) => {
-                for surface in block.surface.iter() {
-                    let range = range_from_surface(surface);
+            Comp::Land(config) => {
+                let range = range_from_surface(&block.surface);
 
-                    'tiles: for tile in range {
-                        let ground = world.ground.get(&tile).map_or(0, |f| f.id);
+                'tiles: for tile in range {
+                    let ground = world.ground.get(&tile).map_or(0, |f| f.id);
 
-                        if avg_colors.contains_key(&ground) {
-                            continue 'tiles;
-                        }
+                    if avg_colors.contains_key(&ground) {
+                        continue 'tiles;
+                    }
 
-                        if let Some((mut color, handler)) =
-                            tile_mesh_colors(&world, tile, &query, &meshes)
-                        {
-                            let info = tile_color_info(&color);
-                            avg_colors.insert(ground, info);
-                        }
+                    if let Some((mut color, handler)) =
+                        tile_mesh_colors(&world, tile, &query, &meshes)
+                    {
+                        let info = tile_color_info(&color);
+                        avg_colors.insert(ground, info);
                     }
                 }
             }
@@ -80,60 +78,58 @@ pub fn color_fade(
         let object = &block.objects[0];
 
         match &object.comp {
-            Comp::Grass(config) => {
-                for surface in block.surface.iter() {
-                    let range = range_from_surface(surface);
+            Comp::Land(config) => {
+                let range = range_from_surface(&block.surface);
 
-                    'tiles: for tile in range {
-                        let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
-                        let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
-                        let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
-                        let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
+                'tiles: for tile in range {
+                    let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
+                    let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
+                    let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
+                    let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
 
-                        let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
-                        let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
-                        let ground_bl = world.ground.get(&tile_bl).map_or(0, |f| f.id); // bottom   left
-                        let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
+                    let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
+                    let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
+                    let ground_bl = world.ground.get(&tile_bl).map_or(0, |f| f.id); // bottom   left
+                    let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
 
-                        if let (
-                            Some((mut color_tl, handler_tl)),
-                            Some((mut color_tr, handler_tr)),
-                            Some((mut color_bl, handler_bl)),
-                            Some((mut color_br, handler_br)),
-                        ) = (
-                            tile_mesh_colors(&world, tile_tl, &query, &meshes),
-                            tile_mesh_colors(&world, tile_tr, &query, &meshes),
-                            tile_mesh_colors(&world, tile_bl, &query, &meshes),
-                            tile_mesh_colors(&world, tile_br, &query, &meshes),
-                        ) {
-                            if ground_tl == ground_tr
-                                && ground_bl == ground_br
-                                && ground_bl == ground_tl
-                            {
-                                continue 'tiles;
-                            }
-
-                            let info_tl = &avg_colors[&ground_tl];
-                            let info_tr = &avg_colors[&ground_tr];
-                            let info_bl = &avg_colors[&ground_bl];
-                            let info_br = &avg_colors[&ground_br];
-
-                            let mut paint = Vec::new();
-                            paint.extend_from_slice(&info_tl.1);
-                            paint.extend_from_slice(&info_tr.1);
-                            paint.extend_from_slice(&info_bl.1);
-                            paint.extend_from_slice(&info_br.1);
-
-                            mix_tile(&mut rng, &mut color_tl, &info_tl.0, &paint, &map_tl);
-                            mix_tile(&mut rng, &mut color_tr, &info_tr.0, &paint, &map_tr);
-                            mix_tile(&mut rng, &mut color_br, &info_br.0, &paint, &map_br);
-                            mix_tile(&mut rng, &mut color_bl, &info_bl.0, &paint, &map_bl);
-
-                            set_mesh_colors(&color_tl, &handler_tl, &mut meshes);
-                            set_mesh_colors(&color_tr, &handler_tr, &mut meshes);
-                            set_mesh_colors(&color_bl, &handler_bl, &mut meshes);
-                            set_mesh_colors(&color_br, &handler_br, &mut meshes);
+                    if let (
+                        Some((mut color_tl, handler_tl)),
+                        Some((mut color_tr, handler_tr)),
+                        Some((mut color_bl, handler_bl)),
+                        Some((mut color_br, handler_br)),
+                    ) = (
+                        tile_mesh_colors(&world, tile_tl, &query, &meshes),
+                        tile_mesh_colors(&world, tile_tr, &query, &meshes),
+                        tile_mesh_colors(&world, tile_bl, &query, &meshes),
+                        tile_mesh_colors(&world, tile_br, &query, &meshes),
+                    ) {
+                        if ground_tl == ground_tr
+                            && ground_bl == ground_br
+                            && ground_bl == ground_tl
+                        {
+                            continue 'tiles;
                         }
+
+                        let info_tl = &avg_colors[&ground_tl];
+                        let info_tr = &avg_colors[&ground_tr];
+                        let info_bl = &avg_colors[&ground_bl];
+                        let info_br = &avg_colors[&ground_br];
+
+                        let mut paint = Vec::new();
+                        paint.extend_from_slice(&info_tl.1);
+                        paint.extend_from_slice(&info_tr.1);
+                        paint.extend_from_slice(&info_bl.1);
+                        paint.extend_from_slice(&info_br.1);
+
+                        mix_tile(&mut rng, &mut color_tl, &info_tl.0, &paint, &map_tl);
+                        mix_tile(&mut rng, &mut color_tr, &info_tr.0, &paint, &map_tr);
+                        mix_tile(&mut rng, &mut color_br, &info_br.0, &paint, &map_br);
+                        mix_tile(&mut rng, &mut color_bl, &info_bl.0, &paint, &map_bl);
+
+                        set_mesh_colors(&color_tl, &handler_tl, &mut meshes);
+                        set_mesh_colors(&color_tr, &handler_tr, &mut meshes);
+                        set_mesh_colors(&color_bl, &handler_bl, &mut meshes);
+                        set_mesh_colors(&color_br, &handler_br, &mut meshes);
                     }
                 }
             }

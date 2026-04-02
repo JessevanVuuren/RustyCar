@@ -1,7 +1,7 @@
 use crate::world::{
     components::{
-        Comp, Grass, GrassConfig, Ground, Model, Offset, Placement, Range, Rotation, StaticWorld,
-        TilePos, TileType, TileWorld, Value,
+        Comp, Dirt, Fence, Flower, GrassConfig, Ground, Land, Log, Model, Mushroom, Offset,
+        Placement, Range, Rock, Rotation, StaticWorld, TilePos, TileType, TileWorld, Tree, Value,
     },
     ground::ground::ground_plane,
     utils::range_from_surface,
@@ -24,51 +24,51 @@ pub fn init_static_world(
 
     for (layer_id, block) in static_world.blocks.iter().enumerate() {
         for object in block.objects.iter() {
-            for surface in block.surface.iter() {
-                let range = range_from_surface(surface);
+            let range = range_from_surface(&block.surface);
 
-                match object.placement.amount {
-                    Value::Random(low, high) => {}
-                    Value::True => {
-                        for tile in range {
-                            let path = model_path(&mut rng, object);
+            match object.placement.amount {
+                Value::Random(low, high) => {
+                    todo!("Random not implemented")
+                }
+                Value::True => {
+                    for tile in range {
+                        let path = model_path(&mut rng, object);
 
-                            let mut transform = tile.to_world_transform();
-                            let placement = &object.placement;
-                            apply_transformations(&mut rng, &mut transform, placement);
+                        let mut transform = tile.to_world_transform();
+                        let placement = &object.placement;
+                        apply_transformations(&mut rng, &mut transform, placement);
 
-                            let comp = object.comp.clone();
+                        let comp = object.comp.clone();
 
-                            let id = match comp {
-                                Comp::Grass(config) => spawn_grass(
-                                    &mut rng,
-                                    config,
-                                    &transform,
-                                    &mut commands,
-                                    &mut meshes,
-                                    &mut materials,
-                                ),
-                                _ => spawn_object(comp, &transform, &path, &mut commands, &assets),
-                            };
+                        let id = match comp {
+                            Comp::Land(config) => spawn_grass(
+                                &mut rng,
+                                config,
+                                &transform,
+                                &mut commands,
+                                &mut meshes,
+                                &mut materials,
+                            ),
+                            _ => spawn_object(comp, &transform, &path, &mut commands, &assets),
+                        };
 
-                            add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
-                        }
+                        add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
                     }
-                    Value::Amount(amount) => {
-                        let tiles: Vec<TilePos> = range.collect();
-                        for _ in 0..amount {
-                            let path = model_path(&mut rng, object);
-                            let tile = tiles[rng.random_range(0..tiles.len())];
+                }
+                Value::Amount(amount) => {
+                    let tiles: Vec<TilePos> = range.collect();
+                    for _ in 0..amount {
+                        let path = model_path(&mut rng, object);
+                        let tile = tiles[rng.random_range(0..tiles.len())];
 
-                            let mut transform = tile.to_world_transform();
+                        let mut transform = tile.to_world_transform();
 
-                            let placement = &object.placement;
-                            apply_transformations(&mut rng, &mut transform, placement);
+                        let placement = &object.placement;
+                        apply_transformations(&mut rng, &mut transform, placement);
 
-                            let comp = object.comp.clone();
-                            let id = spawn_object(comp, &transform, &path, &mut commands, &assets);
-                            add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
-                        }
+                        let comp = object.comp.clone();
+                        let id = spawn_object(comp, &transform, &path, &mut commands, &assets);
+                        add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
                     }
                 }
             }
@@ -109,7 +109,7 @@ fn spawn_grass(
 
     commands
         .spawn((
-            Grass,
+            Land,
             Mesh3d(meshes.add(grass)),
             MeshMaterial3d(materials.add(Color::WHITE)),
             transform.clone(),
@@ -117,20 +117,33 @@ fn spawn_grass(
         .id()
 }
 
-fn spawn_object<T: Component>(
-    object: T,
+fn spawn_object(
+    component: Comp,
     transform: &Transform,
     path: &str,
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
 ) -> Entity {
-    commands
+    let id = commands
         .spawn((
-            object,
             transform.clone(),
             SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(path.to_string()))),
         ))
-        .id()
+        .id();
+
+    match component {
+        Comp::Mushroom => commands.entity(id).insert(Mushroom),
+        Comp::Flower => commands.entity(id).insert(Flower),
+        Comp::Fence => commands.entity(id).insert(Fence),
+        Comp::Tree => commands.entity(id).insert(Tree),
+        Comp::Rock => commands.entity(id).insert(Rock),
+        Comp::Dirt => commands.entity(id).insert(Dirt),
+        Comp::Log => commands.entity(id).insert(Log),
+        Comp::None => panic!("None is invalid Component type"),
+        Comp::Land(grass_config) => panic!("Non configurable grass Tile"),
+    };
+
+    id
 }
 
 fn model_path(rng: &mut SmallRng, model: &Model) -> String {
