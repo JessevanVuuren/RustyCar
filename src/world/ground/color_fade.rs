@@ -4,7 +4,9 @@ use crate::{
         utils::rotate,
     },
     world::{
-        components::{Comp, Land, Range, StaticWorld, TilePos, TileWorld},
+        components::{
+            COLOR_PRECISION, Comp, Land, Range, StaticWorld, TilePos, TileType, TileWorld,
+        },
         ground::mesh_utils::{set_mesh_colors, tile_mesh_colors, tile_mesh_positions},
         utils::range_from_surface,
     },
@@ -22,10 +24,6 @@ use std::{
 use bevy::{math::ops::sqrt, mesh::VertexAttributeValues, prelude::*};
 use std::{collections::HashSet, iter};
 
-const PRECISION: i32 = 1000;
-const SAMPLES: usize = 100;
-const SPREAD: f32 = 0.4;
-
 pub fn color_fade(
     mut commands: Commands,
     static_world: Res<StaticWorld>,
@@ -41,44 +39,34 @@ pub fn color_fade(
     let mut rng = SmallRng::seed_from_u64(1604);
     let mut avg_colors = HashMap::new();
 
-    let map_tl: Vec<f32> = corner_map(points, SPREAD).collect();
-    let map_tr = rotate(&map_tl, points, 1);
-    let map_bl = rotate(&map_tr, points, 2);
-    let map_br = rotate(&map_bl, points, 3);
+    for block in &static_world.blocks {
+        if let TileType::Ground(model) = &block.models {
+            let range = range_from_surface(&block.surface);
 
-    for i in 0..static_world.blocks.iter().len() {
-        let block = &static_world.blocks[i];
-        let object = &block.objects[0];
+            'tiles: for tile in range {
+                let ground = world.ground.get(&tile).map_or(0, |f| f.id);
 
-        match &object.comp {
-            Comp::Land(config) => {
-                let range = range_from_surface(&block.surface);
+                if avg_colors.contains_key(&ground) {
+                    continue 'tiles;
+                }
 
-                'tiles: for tile in range {
-                    let ground = world.ground.get(&tile).map_or(0, |f| f.id);
-
-                    if avg_colors.contains_key(&ground) {
-                        continue 'tiles;
-                    }
-
-                    if let Some((mut color, handler)) =
-                        tile_mesh_colors(&world, tile, &query, &meshes)
-                    {
-                        let info = tile_color_info(&color);
-                        avg_colors.insert(ground, info);
-                    }
+                if let Some((mut color, handler)) = tile_mesh_colors(&world, tile, &query, &meshes)
+                {
+                    let info = tile_color_info(&color);
+                    avg_colors.insert(ground, info);
                 }
             }
-            _ => (),
         }
     }
 
-    for i in 0..static_world.blocks.iter().len() {
-        let block = &static_world.blocks[i];
-        let object = &block.objects[0];
+    for block in &static_world.blocks {
+        if let TileType::Ground(model) = &block.models {
+            if let Comp::Land(config) = &model.comp {
+                let map_tl: Vec<f32> = corner_map(points, config.color_spread).collect();
+                let map_tr = rotate(&map_tl, points, 1);
+                let map_bl = rotate(&map_tr, points, 2);
+                let map_br = rotate(&map_bl, points, 3);
 
-        match &object.comp {
-            Comp::Land(config) => {
                 let range = range_from_surface(&block.surface);
 
                 'tiles: for tile in range {
@@ -93,10 +81,10 @@ pub fn color_fade(
                     let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
 
                     if let (
-                        Some((mut color_tl, handler_tl)),
-                        Some((mut color_tr, handler_tr)),
-                        Some((mut color_bl, handler_bl)),
-                        Some((mut color_br, handler_br)),
+                        Some((mut col_tl, handler_tl)),
+                        Some((mut col_tr, handler_tr)),
+                        Some((mut col_bl, handler_bl)),
+                        Some((mut col_br, handler_br)),
                     ) = (
                         tile_mesh_colors(&world, tile_tl, &query, &meshes),
                         tile_mesh_colors(&world, tile_tr, &query, &meshes),
@@ -121,38 +109,38 @@ pub fn color_fade(
                         paint.extend_from_slice(&info_bl.1);
                         paint.extend_from_slice(&info_br.1);
 
-                        mix_tile(&mut rng, &mut color_tl, &info_tl.0, &paint, &map_tl);
-                        mix_tile(&mut rng, &mut color_tr, &info_tr.0, &paint, &map_tr);
-                        mix_tile(&mut rng, &mut color_br, &info_br.0, &paint, &map_br);
-                        mix_tile(&mut rng, &mut color_bl, &info_bl.0, &paint, &map_bl);
+                        let samples = config.color_samples;
+                        mix_tile(&mut rng, &mut col_tl, &info_tl.0, &paint, &map_tl, samples);
+                        mix_tile(&mut rng, &mut col_tr, &info_tr.0, &paint, &map_tr, samples);
+                        mix_tile(&mut rng, &mut col_br, &info_br.0, &paint, &map_br, samples);
+                        mix_tile(&mut rng, &mut col_bl, &info_bl.0, &paint, &map_bl, samples);
 
-                        set_mesh_colors(&color_tl, &handler_tl, &mut meshes);
-                        set_mesh_colors(&color_tr, &handler_tr, &mut meshes);
-                        set_mesh_colors(&color_bl, &handler_bl, &mut meshes);
-                        set_mesh_colors(&color_br, &handler_br, &mut meshes);
+                        set_mesh_colors(&col_tl, &handler_tl, &mut meshes);
+                        set_mesh_colors(&col_tr, &handler_tr, &mut meshes);
+                        set_mesh_colors(&col_bl, &handler_bl, &mut meshes);
+                        set_mesh_colors(&col_br, &handler_br, &mut meshes);
                     }
                 }
             }
-            _ => (),
         }
     }
 }
 
 fn color_to_key(color: [f32; 4]) -> [i32; 4] {
     [
-        (color[0] * PRECISION as f32) as i32,
-        (color[1] * PRECISION as f32) as i32,
-        (color[2] * PRECISION as f32) as i32,
-        (color[3] * PRECISION as f32) as i32,
+        (color[0] * COLOR_PRECISION as f32) as i32,
+        (color[1] * COLOR_PRECISION as f32) as i32,
+        (color[2] * COLOR_PRECISION as f32) as i32,
+        (color[3] * COLOR_PRECISION as f32) as i32,
     ]
 }
 
 fn key_to_color(key: [i32; 4]) -> [f32; 4] {
     [
-        key[0] as f32 / PRECISION as f32,
-        key[1] as f32 / PRECISION as f32,
-        key[2] as f32 / PRECISION as f32,
-        key[3] as f32 / PRECISION as f32,
+        key[0] as f32 / COLOR_PRECISION as f32,
+        key[1] as f32 / COLOR_PRECISION as f32,
+        key[2] as f32 / COLOR_PRECISION as f32,
+        key[3] as f32 / COLOR_PRECISION as f32,
     ]
 }
 
@@ -210,11 +198,12 @@ fn mix_tile(
     average: &[f32; 4],
     colors: &Vec<[i32; 4]>,
     scaler: &Vec<f32>,
+    samples: i32,
 ) {
     let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads - 1;
 
-    for _ in 0..SAMPLES {
+    for _ in 0..samples {
         let (x, z) = random_xz(rng, points);
         let i = (z * sub_quads + x) as usize;
 

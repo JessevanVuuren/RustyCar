@@ -21,6 +21,7 @@ use crate::{
 };
 
 fn main() {
+    // let static_world = multiple_surface();
     let static_world = test_world();
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();

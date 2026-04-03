@@ -8,7 +8,7 @@ use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
     extra::noise::perlin_2d,
-    world::components::{GrassConfig, Noise},
+    world::components::{LandConfig, Noise},
 };
 
 fn rgb_lerp(c1: Color, c2: Color, t: f32) -> LinearRgba {
@@ -45,7 +45,7 @@ pub fn ground_plane(
     offset: Vec3,
     subdivision: u32,
     size: f32,
-    config: GrassConfig,
+    config: LandConfig,
 ) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,

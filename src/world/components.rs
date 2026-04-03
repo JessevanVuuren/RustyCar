@@ -7,6 +7,9 @@ use bevy::{math::usize, prelude::*};
 use rand::{RngExt, rngs::SmallRng};
 
 pub const TILE_SIZE: f32 = 4.0;
+pub const QUAD_POINTS: i32 = 6;
+pub const COLOR_PRECISION: i32 = 1000;
+pub const BASE_ASSET: &str = "models/";
 
 #[derive(Resource, Clone, Debug)]
 pub struct StaticWorld {
@@ -15,7 +18,7 @@ pub struct StaticWorld {
 
 #[derive(Clone, Debug)]
 pub struct WorldBlock {
-    pub objects: Vec<Model>,
+    pub models: TileType,
     pub surface: Surface,
 }
 
@@ -28,7 +31,6 @@ pub struct Surface {
 #[derive(Clone, Debug, Default)]
 pub struct Model {
     pub placement: Placement,
-    pub tile_type: TileType,
     pub path: String,
     pub range: Range<i32>,
     pub comp: Comp,
@@ -41,11 +43,10 @@ pub enum Range<T> {
     #[default]
     None,
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub enum TileType {
-    #[default]
-    Object,
-    Ground,
+    Models(Vec<Model>),
+    Ground(Model),
 }
 
 #[derive(Clone, Debug, Default)]
@@ -98,12 +99,11 @@ pub struct Dirt;
 #[derive(Component)]
 pub struct Log;
 
-
 #[derive(Component, Clone, Debug, Default)]
 pub enum Comp {
     Mushroom,
     Flower,
-    Land(GrassConfig),
+    Land(LandConfig),
     Fence,
     Tree,
     Rock,
@@ -114,11 +114,15 @@ pub enum Comp {
 }
 
 #[derive(Clone, Debug)]
-pub struct GrassConfig {
+pub struct LandConfig {
     pub color: Noise<Color>,
     pub height: Noise<f32>,
     pub colors: Vec<Color>,
     pub subdivisions: u8,
+    pub color_samples: i32,
+    pub color_spread: f32,
+    pub stitch_intensity: f32,
+    pub stitch_spread: f32,
 }
 
 #[derive(Clone, Debug)]

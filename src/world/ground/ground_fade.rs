@@ -5,8 +5,8 @@ use crate::{
     },
     world::{
         components::{
-            Comp, GrassConfig, Land, Model, Offset, Placement, Range, Rotation, StaticWorld,
-            TILE_SIZE, TilePos, TileType, TileWorld, Value,
+            Comp, Land, LandConfig, Model, Offset, Placement, QUAD_POINTS, Range, Rotation,
+            StaticWorld, TILE_SIZE, TilePos, TileType, TileWorld, Value,
         },
         ground::mesh_utils::{set_mesh_position, tile_mesh_positions},
         utils::range_from_surface,
@@ -62,22 +62,22 @@ pub fn ground_fade(
     mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Land>>,
 ) {
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let points = sub_quads + 1;
+    for block in &static_world.blocks {
+        if let TileType::Ground(model) = &block.models {
+            if let Comp::Land(config) = &model.comp {
+                let intensity = config.stitch_intensity;
+                let spread = config.stitch_spread;
 
-    let horizontal = &smooth_bump(points, 2.0, 0.4).collect::<Vec<f32>>();
-    let vertical = &smooth_bump(points, 2.0, 0.4).collect::<Vec<f32>>();
-    let corner = &smooth_corner(points, 2.0, 0.4).collect::<Vec<f32>>();
-    let tsplit = &smooth_tsplit(points, 2.0, 0.4).collect::<Vec<f32>>();
-    let xsplit = &smooth_xsplit(points, 2.0, 0.4).collect::<Vec<f32>>();
+                let sub_quads = 2i32.pow(config.subdivisions as u32);
+                let points = sub_quads + 1;
 
-    let horizontal = &rotate(horizontal, points, 1);
+                let horizontal = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
+                let vertical = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
+                let corner = &smooth_corner(points, intensity, spread).collect::<Vec<f32>>();
+                let tsplit = &smooth_tsplit(points, intensity, spread).collect::<Vec<f32>>();
+                let xsplit = &smooth_xsplit(points, intensity, spread).collect::<Vec<f32>>();
+                let horizontal = &rotate(horizontal, points, 1);
 
-    for block in static_world.blocks.iter() {
-        let object = &block.objects[0];
-
-        match &object.comp {
-            Comp::Land(config) => {
                 let range = range_from_surface(&block.surface);
 
                 'tiles: for tile in range {
@@ -146,6 +146,7 @@ pub fn ground_fade(
                                     &mut pos_tr.0,
                                     &mut pos_bl.0,
                                     &mut pos_br.0,
+                                    sub_quads,
                                 );
 
                                 let height_map = map_averages(&horizontal, &vertical);
@@ -158,6 +159,7 @@ pub fn ground_fade(
                                     &mut pos_br.0,
                                     &height_map,
                                     &scaler,
+                                    sub_quads,
                                 );
 
                                 set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
@@ -171,7 +173,6 @@ pub fn ground_fade(
                     }
                 }
             }
-            _ => (),
         }
     }
 }
@@ -197,11 +198,10 @@ fn create_height_map(
     tile2: &mut [[f32; 3]],
     tile3: &mut [[f32; 3]],
     tile4: &mut [[f32; 3]],
+    sub_quads: i32,
 ) -> (Vec<f32>, Vec<f32>) {
-    let sub_quads = 2i32.pow(4.0 as u32);
     let half = sub_quads / 2;
-    let quad_points = 6;
-    let row = sub_quads * quad_points;
+    let row = sub_quads * QUAD_POINTS;
     let half_row = row / 2;
 
     let size = ((sub_quads + 1) * (sub_quads + 1)) as usize;
@@ -210,7 +210,7 @@ fn create_height_map(
 
     for i in 0..half {
         let index_1 = ((i + half + 1) * row - half_row) as usize;
-        let index_2 = ((i + half + 1) * row - half_row - quad_points) as usize;
+        let index_2 = ((i + half + 1) * row - half_row - QUAD_POINTS) as usize;
 
         let start = tile1[index_1 + 0][1];
         let stop = tile2[index_2 + 2][1];
@@ -219,7 +219,7 @@ fn create_height_map(
 
     for i in 0..half {
         let index_1 = ((i + 1) * row - half_row) as usize;
-        let index_2 = ((i + 1) * row - half_row - quad_points) as usize;
+        let index_2 = ((i + 1) * row - half_row - QUAD_POINTS) as usize;
 
         let start = tile3[index_1 + 0][1];
         let stop = tile4[index_2 + 2][1];
@@ -235,8 +235,8 @@ fn create_height_map(
     }
 
     for i in 0..half {
-        let index_1 = (row * half + i * quad_points + half_row) as usize;
-        let index_2 = (row * (half - 1) + i * quad_points + half_row) as usize;
+        let index_1 = (row * half + i * QUAD_POINTS + half_row) as usize;
+        let index_2 = (row * (half - 1) + i * QUAD_POINTS + half_row) as usize;
 
         let start = tile1[index_1 + 0][1];
         let stop = tile3[index_2 + 1][1];
@@ -245,8 +245,8 @@ fn create_height_map(
     }
 
     for i in 0..half {
-        let index_1 = (row * half + i * quad_points) as usize;
-        let index_2 = (row * (half - 1) + i * quad_points) as usize;
+        let index_1 = (row * half + i * QUAD_POINTS) as usize;
+        let index_2 = (row * (half - 1) + i * QUAD_POINTS) as usize;
 
         let start = tile2[index_1 + 0][1];
         let stop = tile4[index_2 + 1][1];
@@ -282,8 +282,8 @@ fn stitch_tiles(
     tile4: &mut [[f32; 3]],
     height_map: &Vec<f32>,
     scaler: &Vec<f32>,
+    sub_quads: i32,
 ) {
-    let sub_quads = 2i32.pow(4.0 as u32);
     let half = sub_quads / 2;
     let points = sub_quads + 1;
 

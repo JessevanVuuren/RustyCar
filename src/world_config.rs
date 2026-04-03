@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::world::{
     components::{
-        Comp, GrassConfig, Model, Noise, NoiseLevel, Offset, Placement, Range, Rotation,
+        Comp, LandConfig, Model, Noise, NoiseLevel, Offset, Placement, Range, Rotation,
         StaticWorld, Surface, TilePos, TileType, Value, WorldBlock,
     },
     utils::{DOWN, LEFT, RIGHT, UP},
@@ -13,65 +13,50 @@ use crate::world::{
 pub fn multiple_surface() -> StaticWorld {
     StaticWorld {
         blocks: vec![WorldBlock {
-            objects: vec![
-                Model {
-                    range: Range::None,
-                    comp: Comp::Land(GrassConfig {
-                        color: Noise {
-                            octaves: vec![NoiseLevel {
+            models: TileType::Ground(Model {
+                comp: Comp::Land(LandConfig {
+                    color: Noise {
+                        octaves: vec![NoiseLevel {
+                            frequency: 0.1,
+                            amplitude: 1.0,
+                        }],
+                        value_1: Color::linear_rgb(0.678, 0.369, 0.012),
+                        value_2: Color::linear_rgb(0.275, 0.412, 0.0),
+                    },
+                    height: Noise {
+                        octaves: vec![
+                            NoiseLevel {
                                 frequency: 0.1,
                                 amplitude: 1.0,
-                            }],
-                            // value_1: Color::linear_rgb(0.678, 0.369, 0.012),
-                            // value_2: Color::linear_rgb(0.275, 0.412, 0.0),
-                            value_1: Color::linear_rgb(0.678, 0.369, 0.012),
-                            value_2: Color::linear_rgb(0.275, 0.412, 0.0),
-                        },
-                        height: Noise {
-                            octaves: vec![
-                                NoiseLevel {
-                                    frequency: 0.1,
-                                    amplitude: 1.0,
-                                },
-                                NoiseLevel {
-                                    frequency: 5.6,
-                                    amplitude: 0.8,
-                                },
-                            ],
-                            value_1: 0.0,
-                            value_2: 1.0,
-                        },
-                        colors: vec![
-                            Color::linear_rgb(0.35, 0.18, 0.05),
-                            Color::linear_rgb(0.5, 0.31, 0.14),
-                            Color::linear_rgb(0.58, 0.4, 0.22),
-                            Color::linear_rgb(0.65, 0.54, 0.39),
-                            Color::linear_rgb(0.71, 0.68, 0.56),
-                            Color::linear_rgb(0.76, 0.77, 0.67),
-                            Color::linear_rgb(0.64, 0.67, 0.53),
-                            Color::linear_rgb(0.4, 0.43, 0.29),
-                            Color::linear_rgb(0.25, 0.28, 0.2),
-                            Color::linear_rgb(0.2, 0.24, 0.16),
+                            },
+                            NoiseLevel {
+                                frequency: 5.6,
+                                amplitude: 0.8,
+                            },
                         ],
-                        subdivisions: 4,
-                    }),
-                    tile_type: TileType::Ground,
-                    ..Default::default()
-                },
-                Model {
-                    range: Range::Range(1, 4),
-                    comp: Comp::Mushroom,
-                    path: "nature/mushroom".into(),
-                    placement: Placement {
-                        amount: Value::Amount(2),
-                        offset: Offset::Random,
-                        scale: Value::Random(0.2, 1.0),
-                        rotation: Rotation::Random(-PI, PI),
-                        ..Default::default()
+                        value_1: 0.0,
+                        value_2: 1.0,
                     },
-                    ..Default::default()
-                },
-            ],
+                    colors: vec![
+                        Color::linear_rgb(0.35, 0.18, 0.05),
+                        Color::linear_rgb(0.5, 0.31, 0.14),
+                        Color::linear_rgb(0.58, 0.4, 0.22),
+                        Color::linear_rgb(0.65, 0.54, 0.39),
+                        Color::linear_rgb(0.71, 0.68, 0.56),
+                        Color::linear_rgb(0.76, 0.77, 0.67),
+                        Color::linear_rgb(0.64, 0.67, 0.53),
+                        Color::linear_rgb(0.4, 0.43, 0.29),
+                        Color::linear_rgb(0.25, 0.28, 0.2),
+                        Color::linear_rgb(0.2, 0.24, 0.16),
+                    ],
+                    subdivisions: 4,
+                    color_samples: 1000,
+                    color_spread: 0.4,
+                    stitch_intensity: 2.0,
+                    stitch_spread: 0.4,
+                }),
+                ..Default::default()
+            }),
             surface: Surface {
                 positive: vec![
                     Range::Range(TilePos::new(1, 1), TilePos::new(1, 4)),
@@ -99,9 +84,9 @@ pub fn small_grass() -> StaticWorld {
     StaticWorld {
         blocks: vec![
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -139,19 +124,22 @@ pub fn small_grass() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start, dirt_stop)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -175,6 +163,10 @@ pub fn small_grass() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -182,9 +174,8 @@ pub fn small_grass() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start, grass_stop)],
                     negative: vec![Range::Range(dirt_start, dirt_stop)],
@@ -215,9 +206,9 @@ pub fn lots_of_patches() -> StaticWorld {
     StaticWorld {
         blocks: vec![
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -253,20 +244,23 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
                     path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start_patch, dirt_stop_patch)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -290,6 +284,10 @@ pub fn lots_of_patches() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -298,18 +296,17 @@ pub fn lots_of_patches() -> StaticWorld {
                         ],
                     }),
                     path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start_patch, grass_stop_patch)],
                     negative: vec![Range::Range(grass_start_neg, grass_stop_neg)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -339,20 +336,22 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.212, 0.212, 0.212),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(gravel_start, gravel_stop)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -388,20 +387,22 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(dirt2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -425,6 +426,10 @@ pub fn lots_of_patches() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -432,19 +437,17 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(grass2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -474,20 +477,22 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.212, 0.212, 0.212),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(gravel2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -517,11 +522,13 @@ pub fn lots_of_patches() -> StaticWorld {
                             Color::linear_rgb(0.969, 0.831, 1.0),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(spooky)],
                     ..default()
@@ -567,9 +574,9 @@ pub fn large_grass_test() -> StaticWorld {
     StaticWorld {
         blocks: vec![
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -605,20 +612,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start, dirt_stop)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -642,6 +651,10 @@ pub fn large_grass_test() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -649,20 +662,17 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start, grass_stop)],
                     negative: vec![Range::Range(dirt_start, dirt_stop)],
                 },
             },
-            //
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -698,20 +708,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start2, dirt_stop2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -735,6 +747,10 @@ pub fn large_grass_test() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -742,19 +758,17 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start2, grass_stop2)],
                     negative: vec![Range::Range(dirt_start2, dirt_stop2)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -790,20 +804,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start3, dirt_stop3)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -827,6 +843,10 @@ pub fn large_grass_test() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -834,19 +854,17 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start3, grass_stop3)],
                     negative: vec![Range::Range(dirt_start3, dirt_stop3)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -882,20 +900,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(dirt_start_patch, dirt_stop_patch)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -919,6 +939,10 @@ pub fn large_grass_test() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -926,19 +950,17 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(grass_start_patch, grass_stop_patch)],
                     negative: vec![Range::Range(grass_start_neg, grass_stop_neg)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -968,20 +990,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.212, 0.212, 0.212),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(gravel_start, gravel_stop)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -1017,20 +1041,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(dirt2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -1054,6 +1080,10 @@ pub fn large_grass_test() -> StaticWorld {
                             value_2: 0.5,
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         colors: vec![
                             Color::linear_rgb(0.125, 0.545, 0.227),
                             Color::linear_rgb(0.145, 0.635, 0.267),
@@ -1061,19 +1091,17 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(grass2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -1103,20 +1131,22 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.212, 0.212, 0.212),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(gravel2)],
                     ..default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -1146,11 +1176,13 @@ pub fn large_grass_test() -> StaticWorld {
                             Color::linear_rgb(0.969, 0.831, 1.0),
                         ],
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::One(spooky)],
                     ..default()
@@ -1178,9 +1210,9 @@ pub fn test_world() -> StaticWorld {
         blocks: vec![
             //welcome to the jungle
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.1,
@@ -1190,6 +1222,10 @@ pub fn test_world() -> StaticWorld {
                             value_2: Color::linear_rgb(0.275, 0.412, 0.0),
                         },
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         height: Noise {
                             octaves: vec![
                                 NoiseLevel {
@@ -1218,17 +1254,15 @@ pub fn test_world() -> StaticWorld {
                             Color::linear_rgb(0.2, 0.24, 0.16),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, play_stop)],
                     negative: vec![Range::Range(play_start, play_stop)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 8),
                     comp: Comp::Flower,
                     path: "nature/flower".into(),
@@ -1240,14 +1274,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, jungle_stop)],
                     negative: vec![Range::Range(play_start, jungle_stop)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Log,
                     path: "nature/log".into(),
@@ -1259,14 +1293,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, jungle_stop)],
                     negative: vec![Range::Range(play_start, jungle_stop)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Mushroom,
                     path: "nature/mushroom".into(),
@@ -1278,14 +1312,15 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
+
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, jungle_stop)],
                     negative: vec![Range::Range(play_start, jungle_stop)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 6),
                     comp: Comp::Rock,
                     path: "nature/rock".into(),
@@ -1297,14 +1332,15 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
+
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, jungle_stop)],
                     negative: vec![Range::Range(play_start, jungle_stop)],
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Tree,
                     path: "nature/pine_tree".into(),
@@ -1316,7 +1352,8 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
+
                 surface: Surface {
                     positive: vec![Range::Range(jungle_start, jungle_stop)],
                     negative: vec![Range::Range(play_start, jungle_stop)],
@@ -1324,10 +1361,14 @@ pub fn test_world() -> StaticWorld {
             },
             // playable world
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Ground(Model {
                     range: Range::None,
-                    comp: Comp::Land(GrassConfig {
+                    comp: Comp::Land(LandConfig {
                         subdivisions: 4,
+                        color_samples: 1000,
+                        color_spread: 0.4,
+                        stitch_intensity: 2.0,
+                        stitch_spread: 0.4,
                         color: Noise {
                             octaves: vec![NoiseLevel {
                                 frequency: 0.01,
@@ -1358,17 +1399,15 @@ pub fn test_world() -> StaticWorld {
                             Color::linear_rgb(0.29, 0.839, 0.427),
                         ],
                     }),
-                    path: "ground/grass".into(),
-                    tile_type: TileType::Ground,
                     ..Default::default()
-                }],
+                }),
                 surface: Surface {
                     positive: vec![Range::Range(play_start, play_stop)],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 8),
                     comp: Comp::Flower,
                     path: "nature/flower".into(),
@@ -1380,14 +1419,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(play_start, play_stop)],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Flower,
                     path: "nature/mushroom".into(),
@@ -1399,19 +1438,19 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(play_start, play_stop)],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(
                         TilePos::new(play_start.x + 1, play_start.z),
@@ -1421,12 +1460,12 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(
                         TilePos::new(play_start.x + 1, play_stop.z),
@@ -1436,7 +1475,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1445,7 +1484,7 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(
                         TilePos::new(play_start.x, play_start.z + 1),
@@ -1455,7 +1494,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1464,7 +1503,7 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::Range(
                         TilePos::new(play_stop.x, play_start.z + 1),
@@ -1474,7 +1513,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1483,14 +1522,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::One(play_start)],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1499,14 +1538,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::One(jungle_stop)],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1515,14 +1554,14 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::One(TilePos::new(play_start.x, play_stop.z))],
                     ..Default::default()
                 },
             },
             WorldBlock {
-                objects: vec![Model {
+                models: TileType::Models(vec![Model {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1531,7 +1570,7 @@ pub fn test_world() -> StaticWorld {
                         ..Default::default()
                     },
                     ..Default::default()
-                }],
+                }]),
                 surface: Surface {
                     positive: vec![Range::One(TilePos::new(play_stop.x, play_start.z))],
                     ..Default::default()

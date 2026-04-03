@@ -1,16 +1,15 @@
 use crate::world::{
     components::{
-        Comp, Dirt, Fence, Flower, GrassConfig, Ground, Land, Log, Model, Mushroom, Offset,
-        Placement, Range, Rock, Rotation, StaticWorld, TilePos, TileType, TileWorld, Tree, Value,
+        BASE_ASSET, Comp, Dirt, Fence, Flower, Ground, Land, LandConfig, Log, Model, Mushroom,
+        Offset, Placement, Range, Rock, Rotation, StaticWorld, TilePos, TileType, TileWorld, Tree,
+        Value,
     },
     ground::ground::ground_plane,
     utils::range_from_surface,
 };
 use bevy::prelude::*;
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{f32::consts::FRAC_PI_2, iter};
-
-const BASE: &str = "models/";
+use std::{f32::consts::FRAC_PI_2, iter, slice::from_ref};
 
 pub fn init_static_world(
     mut commands: Commands,
@@ -23,7 +22,12 @@ pub fn init_static_world(
     let mut rng = SmallRng::seed_from_u64(1604);
 
     for (layer_id, block) in static_world.blocks.iter().enumerate() {
-        for object in block.objects.iter() {
+        let models = match &block.models {
+            TileType::Ground(ground) => from_ref(ground),
+            TileType::Models(models) => models,
+        };
+
+        for object in models {
             let range = range_from_surface(&block.surface);
 
             match object.placement.amount {
@@ -32,7 +36,7 @@ pub fn init_static_world(
                 }
                 Value::True => {
                     for tile in range {
-                        let path = model_path(&mut rng, object);
+                        let path = model_path(&mut rng, &object);
 
                         let mut transform = tile.to_world_transform();
                         let placement = &object.placement;
@@ -52,13 +56,13 @@ pub fn init_static_world(
                             _ => spawn_object(comp, &transform, &path, &mut commands, &assets),
                         };
 
-                        add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
+                        add_to_world_map(tile, &block.models, &mut world, id, layer_id)
                     }
                 }
                 Value::Amount(amount) => {
                     let tiles: Vec<TilePos> = range.collect();
                     for _ in 0..amount {
-                        let path = model_path(&mut rng, object);
+                        let path = model_path(&mut rng, &object);
                         let tile = tiles[rng.random_range(0..tiles.len())];
 
                         let mut transform = tile.to_world_transform();
@@ -68,7 +72,7 @@ pub fn init_static_world(
 
                         let comp = object.comp.clone();
                         let id = spawn_object(comp, &transform, &path, &mut commands, &assets);
-                        add_to_world_map(tile, &object.tile_type, &mut world, id, layer_id)
+                        add_to_world_map(tile, &block.models, &mut world, id, layer_id)
                     }
                 }
             }
@@ -84,8 +88,8 @@ fn add_to_world_map(
     layer_id: usize,
 ) {
     match tile_type {
-        TileType::Object => world.object.entry(key).or_default().push(id),
-        TileType::Ground => {
+        TileType::Models(_) => world.object.entry(key).or_default().push(id),
+        TileType::Ground(_) => {
             world.ground.insert(
                 key,
                 Ground {
@@ -99,7 +103,7 @@ fn add_to_world_map(
 
 fn spawn_grass(
     rng: &mut SmallRng,
-    config: GrassConfig,
+    config: LandConfig,
     transform: &Transform,
     commands: &mut Commands,
     meshes: &mut ResMut<Assets<Mesh>>,
@@ -147,7 +151,7 @@ fn spawn_object(
 }
 
 fn model_path(rng: &mut SmallRng, model: &Model) -> String {
-    let path = format!("{BASE}{}", model.path);
+    let path = format!("{BASE_ASSET}{}", model.path);
 
     match model.range {
         Range::None => format!("{path}.glb"),
