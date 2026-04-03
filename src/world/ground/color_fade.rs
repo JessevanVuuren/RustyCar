@@ -33,27 +33,28 @@ pub fn color_fade(
     mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Land>>,
 ) {
-    let sub_quads = 2i32.pow(4.0 as u32);
-    let points = sub_quads;
-
     let mut rng = SmallRng::seed_from_u64(1604);
     let mut avg_colors = HashMap::new();
 
     for block in &static_world.blocks {
         if let TileType::Ground(model) = &block.models {
-            let range = range_from_surface(&block.surface);
+            if let Comp::Land(config) = &model.comp {
+                let range = range_from_surface(&block.surface);
+                let sub_quads = 2i32.pow(config.subdivisions as u32);
 
-            'tiles: for tile in range {
-                let ground = world.ground.get(&tile).map_or(0, |f| f.id);
+                'tiles: for tile in range {
+                    let ground = world.ground.get(&tile).map_or(0, |f| f.id);
 
-                if avg_colors.contains_key(&ground) {
-                    continue 'tiles;
-                }
+                    if avg_colors.contains_key(&ground) {
+                        continue 'tiles;
+                    }
 
-                if let Some((mut color, handler)) = tile_mesh_colors(&world, tile, &query, &meshes)
-                {
-                    let info = tile_color_info(&color);
-                    avg_colors.insert(ground, info);
+                    if let Some((mut color, handler)) =
+                        tile_mesh_colors(&world, tile, &query, &meshes)
+                    {
+                        let info = tile_color_info(&color, sub_quads);
+                        avg_colors.insert(ground, info);
+                    }
                 }
             }
         }
@@ -62,6 +63,9 @@ pub fn color_fade(
     for block in &static_world.blocks {
         if let TileType::Ground(model) = &block.models {
             if let Comp::Land(config) = &model.comp {
+                let sub_quads = 2i32.pow(config.subdivisions as u32);
+                let points = sub_quads;
+
                 let map_tl: Vec<f32> = corner_map(points, config.color_spread).collect();
                 let map_tr = rotate(&map_tl, points, 1);
                 let map_bl = rotate(&map_tr, points, 2);
@@ -110,10 +114,42 @@ pub fn color_fade(
                         paint.extend_from_slice(&info_br.1);
 
                         let samples = config.color_samples;
-                        mix_tile(&mut rng, &mut col_tl, &info_tl.0, &paint, &map_tl, samples);
-                        mix_tile(&mut rng, &mut col_tr, &info_tr.0, &paint, &map_tr, samples);
-                        mix_tile(&mut rng, &mut col_br, &info_br.0, &paint, &map_br, samples);
-                        mix_tile(&mut rng, &mut col_bl, &info_bl.0, &paint, &map_bl, samples);
+                        mix_tile(
+                            &mut rng,
+                            &mut col_tl,
+                            &info_tl.0,
+                            &paint,
+                            &map_tl,
+                            samples,
+                            sub_quads,
+                        );
+                        mix_tile(
+                            &mut rng,
+                            &mut col_tr,
+                            &info_tr.0,
+                            &paint,
+                            &map_tr,
+                            samples,
+                            sub_quads,
+                        );
+                        mix_tile(
+                            &mut rng,
+                            &mut col_br,
+                            &info_br.0,
+                            &paint,
+                            &map_br,
+                            samples,
+                            sub_quads,
+                        );
+                        mix_tile(
+                            &mut rng,
+                            &mut col_bl,
+                            &info_bl.0,
+                            &paint,
+                            &map_bl,
+                            samples,
+                            sub_quads,
+                        );
 
                         set_mesh_colors(&col_tl, &handler_tl, &mut meshes);
                         set_mesh_colors(&col_tr, &handler_tr, &mut meshes);
@@ -174,8 +210,7 @@ fn lerp_color_attrib(t: f32, color1: [f32; 4], color2: [f32; 4]) -> [f32; 4] {
     ]
 }
 
-fn tile_color_info(tile: &[[f32; 4]]) -> ([f32; 4], Vec<[i32; 4]>) {
-    let sub_quads = 2i32.pow(4.0 as u32);
+fn tile_color_info(tile: &[[f32; 4]], sub_quads: i32) -> ([f32; 4], Vec<[i32; 4]>) {
     let points = sub_quads - 1;
 
     let mut color = tile[0];
@@ -199,8 +234,8 @@ fn mix_tile(
     colors: &Vec<[i32; 4]>,
     scaler: &Vec<f32>,
     samples: i32,
+    sub_quads: i32,
 ) {
-    let sub_quads = 2i32.pow(4.0 as u32);
     let points = sub_quads - 1;
 
     for _ in 0..samples {
