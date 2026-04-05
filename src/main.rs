@@ -22,8 +22,8 @@ use crate::{
 
 fn main() {
     // let static_world = multiple_surface();
-    // let static_world = test_world();
-    let static_world = large_grass_test();
+    let static_world = test_world();
+    // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
     // let static_world = small_grass();
     // let static_world = multiple_surface();
@@ -82,7 +82,6 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn((
         DirectionalLight {
             color: Color::srgb(1., 0.95, 0.7),
-            // color: Color::srgb(1., 1.0, 1.0),
             illuminance: 5_000.,
             shadows_enabled: true,
             ..default()
@@ -90,16 +89,6 @@ fn setup_camera(mut commands: Commands) {
         Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::new(-0.6, -0.7, -0.7), Vec3::Y),
     ));
 
-    // commands.spawn((
-    //     DirectionalLight {
-    //         color: Color::srgb(1., 0.95, 0.7),
-    //         // color: Color::srgb(1.0, 1.0, 1.0),
-    //         illuminance: 5_000.,
-    //         shadows_enabled: true,
-    //         ..default()
-    //     },
-    //     Transform::from_xyz(0.0, 0.0, 0.0).looking_at(Vec3::new(-1.0, -0.7, -0.6), Vec3::Y),
-    // ));
     commands.insert_resource(ClearColor(Color::srgb(0.6, 0.8, 1.0)));
 
     commands.spawn((offset, PanOrbitCamera { focus, ..default() }));

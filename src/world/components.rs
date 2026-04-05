@@ -98,6 +98,8 @@ pub struct Tree;
 pub struct Dirt;
 #[derive(Component)]
 pub struct Log;
+#[derive(Component)]
+pub struct Object;
 
 #[derive(Component, Clone, Debug, Default)]
 pub enum Comp {
@@ -182,8 +184,8 @@ impl TilePos {
 
     pub fn transform_to_tile(transform: &Transform) -> TilePos {
         TilePos {
-            x: (transform.translation.x / TILE_SIZE) as i32,
-            z: (transform.translation.z / TILE_SIZE) as i32,
+            x: (transform.translation.x / TILE_SIZE).round() as i32,
+            z: (transform.translation.z / TILE_SIZE).round() as i32,
         }
     }
 

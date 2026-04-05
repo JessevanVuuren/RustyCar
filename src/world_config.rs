@@ -181,6 +181,25 @@ pub fn small_grass() -> StaticWorld {
                     negative: vec![Range::Range(dirt_start, dirt_stop)],
                 },
             },
+            WorldBlock {
+                models: TileType::Models(vec![Model {
+                    range: Range::Range(1, 8),
+                    comp: Comp::Flower,
+                    path: "nature/flower".into(),
+                    placement: Placement {
+                        amount: Value::Amount(10),
+                        offset: Offset::Random,
+                        scale: Value::Random(0.2, 1.0),
+                        rotation: Rotation::Random(-PI, PI),
+                        ..Default::default()
+                    },
+                    ..Default::default()
+                }]),
+                surface: Surface {
+                    positive: vec![Range::Range(dirt_start, grass_stop)],
+                    ..default()
+                },
+            },
         ],
     }
 }

@@ -1,8 +1,8 @@
 use crate::world::{
     components::{
         BASE_ASSET, Comp, Dirt, Fence, Flower, Ground, Land, LandConfig, Log, Model, Mushroom,
-        Offset, Placement, Range, Rock, Rotation, StaticWorld, TilePos, TileType, TileWorld, Tree,
-        Value,
+        Object, Offset, Placement, Range, Rock, Rotation, StaticWorld, TilePos, TileType,
+        TileWorld, Tree, Value,
     },
     ground::ground::ground_plane,
     utils::range_from_surface,
@@ -130,6 +130,7 @@ fn spawn_object(
 ) -> Entity {
     let id = commands
         .spawn((
+            Object,
             transform.clone(),
             SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(path.to_string()))),
         ))

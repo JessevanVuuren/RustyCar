@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use crate::world::{
     components::{StaticWorld, TileWorld},
-    ground::{color_fade::color_fade, ground_fade::ground_fade},
+    ground::{color_fade::color_fade, ground_fade::ground_fade, ground_offset::ground_offset},
     spawn::init_static_world,
 };
 
@@ -21,7 +21,7 @@ impl Plugin for WorldPlugin {
 
         app.insert_resource(self.static_world.clone()).add_systems(
             Startup,
-            (init_static_world, (ground_fade, color_fade)).chain(),
+            (init_static_world, (ground_fade, color_fade), ground_offset).chain(),
         );
     }
 }
