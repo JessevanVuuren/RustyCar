@@ -8,7 +8,7 @@ use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
     extra::noise::perlin_2d,
-    world::components::{LandConfig, Noise},
+    world::components::{GroundConfig, Noise, TILE_SIZE},
 };
 
 fn rgb_lerp(c1: Color, c2: Color, t: f32) -> LinearRgba {
@@ -40,25 +40,19 @@ fn color_mix(a: LinearRgba, b: LinearRgba, t: f32) -> LinearRgba {
     .to_linear()
 }
 
-pub fn ground_plane(
-    rng: &mut SmallRng,
-    offset: Vec3,
-    subdivision: u32,
-    size: f32,
-    config: LandConfig,
-) -> Mesh {
+pub fn ground_plane(rng: &mut SmallRng, offset: Vec3, config: &GroundConfig) -> Mesh {
     let mut mesh = Mesh::new(
         PrimitiveTopology::TriangleList,
         RenderAssetUsages::default(),
     );
 
-    let n_triangles = 2 * (4 as u32).pow(subdivision);
+    let n_triangles = 2 * (4 as u32).pow(config.subdivisions.into());
     let n_points = n_triangles as usize * 3;
 
-    let sub_quads = 2u32.pow(subdivision);
+    let sub_quads = 2u32.pow(config.subdivisions.into());
     let resolution = sub_quads + 1;
 
-    let step = size / sub_quads as f32;
+    let step = TILE_SIZE / sub_quads as f32;
 
     let color_map = noise_map(sub_quads, &config.color, step, offset);
     let height_map = noise_map(resolution, &config.height, step, offset);
@@ -69,8 +63,8 @@ pub fn ground_plane(
 
     for z in 0..sub_quads {
         for x in 0..sub_quads {
-            let half = size / 2.0;
-            let step = size / sub_quads as f32;
+            let half = TILE_SIZE / 2.0;
+            let step = TILE_SIZE / sub_quads as f32;
 
             let index = (z * sub_quads + x) as usize;
 
@@ -101,7 +95,6 @@ pub fn ground_plane(
             positions.push([x1, top_right, z0]);
             positions.push([x0, bot_left, z1]);
             positions.push([x1, bot_right, z1]);
-
 
             let color_index = rng.random_range(0..r_colors.len());
             let random_color = r_colors[color_index].to_linear();
@@ -137,7 +130,7 @@ pub fn ground_plane(
     mesh
 }
 
-fn noise_map<T>(size: u32, noise: &Noise<T>, step: f32, offset: Vec3) -> Vec<f32> {
+fn noise_map<T, K>(size: u32, noise: &Noise<T, K>, step: f32, offset: Vec3) -> Vec<f32> {
     (0..size * size)
         .map(|i| {
             let x = step * (i % size) as f32 + offset.x;

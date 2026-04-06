@@ -5,11 +5,12 @@ use crate::{
     },
     world::{
         components::{
-            Comp, Land, LandConfig, Model, Offset, Placement, QUAD_POINTS, Range, Rotation,
-            StaticWorld, TILE_SIZE, TilePos, TileType, TileWorld, Value,
+            Comp, Ground, GroundConfig, Model, Offset, Placement, QUAD_POINTS, Range, Rotation,
+            StaticWorld, TILE_SIZE, TileType, TileWorld, Value,
         },
+        tile_pos::TilePos,
         ground::mesh_utils::{set_mesh_position, tile_mesh_positions},
-        utils::range_from_surface,
+        utils::range_from_surfaces,
     },
 };
 use bevy::{
@@ -17,7 +18,6 @@ use bevy::{
     render::render_resource::encase::vector::AsMutVectorParts,
 };
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use rayon::prelude::*;
 use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter, ops::Mul, sync::Arc};
 use std::{thread, time::Instant};
 
@@ -60,115 +60,105 @@ pub fn ground_fade(
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    query: Query<&Mesh3d, With<Land>>,
+    query: Query<&Mesh3d, With<Ground>>,
 ) {
     for block in &static_world.blocks {
-        if let TileType::Ground(model) = &block.models {
-            if let Comp::Land(config) = &model.comp {
-                let intensity = config.stitch_intensity;
-                let spread = config.stitch_spread;
+        if let TileType::Ground(config) = &block.tiletype {
+            let intensity = config.stitch_intensity;
+            let spread = config.stitch_spread;
 
-                let sub_quads = 2i32.pow(config.subdivisions as u32);
-                let points = sub_quads + 1;
+            let sub_quads = 2i32.pow(config.subdivisions as u32);
+            let points = sub_quads + 1;
 
-                let horizontal = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
-                let vertical = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
-                let corner = &smooth_corner(points, intensity, spread).collect::<Vec<f32>>();
-                let tsplit = &smooth_tsplit(points, intensity, spread).collect::<Vec<f32>>();
-                let xsplit = &smooth_xsplit(points, intensity, spread).collect::<Vec<f32>>();
-                let horizontal = &rotate(horizontal, points, 1);
+            let horizontal = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
+            let vertical = &smooth_bump(points, intensity, spread).collect::<Vec<f32>>();
+            let corner = &smooth_corner(points, intensity, spread).collect::<Vec<f32>>();
+            let tsplit = &smooth_tsplit(points, intensity, spread).collect::<Vec<f32>>();
+            let xsplit = &smooth_xsplit(points, intensity, spread).collect::<Vec<f32>>();
+            let horizontal = &rotate(horizontal, points, 1);
 
-                let range = range_from_surface(&block.surface);
+            let range = range_from_surfaces(&block.surface);
 
-                'tiles: for tile in range {
-                    let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
-                    let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
-                    let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
-                    let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
+            'tiles: for tile in range {
+                let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
+                let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
+                let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
+                let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
 
-                    let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
-                    let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
-                    let ground_bl = world.ground.get(&tile_bl).map_or(0, |f| f.id); // bottom   left
-                    let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
+                let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
+                let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
+                let ground_bl = world.ground.get(&tile_bl).map_or(0, |f| f.id); // bottom   left
+                let ground_br = world.ground.get(&tile_br).map_or(0, |f| f.id); // bottom   right
 
-                    if let (
-                        Some(mut pos_tl),
-                        Some(mut pos_tr),
-                        Some(mut pos_bl),
-                        Some(mut pos_br),
-                    ) = (
-                        tile_mesh_positions(&world, tile_tl, &query, &meshes),
-                        tile_mesh_positions(&world, tile_tr, &query, &meshes),
-                        tile_mesh_positions(&world, tile_bl, &query, &meshes),
-                        tile_mesh_positions(&world, tile_br, &query, &meshes),
-                    ) {
-                        if ground_tl == ground_tr
-                            && ground_bl == ground_br
-                            && ground_bl == ground_tl
-                        {
-                            continue 'tiles;
-                        }
-                        let observed = [ground_tl, ground_tr, ground_bl, ground_br];
+                if let (Some(mut pos_tl), Some(mut pos_tr), Some(mut pos_bl), Some(mut pos_br)) = (
+                    tile_mesh_positions(&world, tile_tl, &query, &meshes),
+                    tile_mesh_positions(&world, tile_tr, &query, &meshes),
+                    tile_mesh_positions(&world, tile_bl, &query, &meshes),
+                    tile_mesh_positions(&world, tile_br, &query, &meshes),
+                ) {
+                    if ground_tl == ground_tr && ground_bl == ground_br && ground_bl == ground_tl {
+                        continue 'tiles;
+                    }
+                    let observed = [ground_tl, ground_tr, ground_bl, ground_br];
 
-                        'config: for conf in CONFIGURATION {
-                            'rotation: for i in 0..4 {
-                                let highest = core_highest_value(&conf.template);
-                                let mut temp = core_rotate(&conf.template, i);
+                    'config: for conf in CONFIGURATION {
+                        'rotation: for i in 0..4 {
+                            let highest = core_highest_value(&conf.template);
+                            let mut temp = core_rotate(&conf.template, i);
 
-                                for _ in 0..highest {
-                                    let ones = core_isolate_ones(&temp);
-                                    let multi = core_multiply(&ones, &observed);
+                            for _ in 0..highest {
+                                let ones = core_isolate_ones(&temp);
+                                let multi = core_multiply(&ones, &observed);
 
-                                    if !core_continuity(&multi) {
-                                        continue 'rotation;
-                                    }
-
-                                    let uniq = core_highest_value(&multi);
-                                    let inv = core_inverse(&ones);
-                                    let inv_multi = core_multiply(&inv, &observed);
-
-                                    if core_contains(&inv_multi, uniq) {
-                                        continue 'rotation;
-                                    }
-                                    temp = core_lower_index(&temp);
+                                if !core_continuity(&multi) {
+                                    continue 'rotation;
                                 }
 
-                                let scaler = match conf.stitch {
-                                    Stitch::Horizontal => horizontal,
-                                    Stitch::Vertical => vertical,
-                                    Stitch::Corner => corner,
-                                    Stitch::TSplit => tsplit,
-                                    Stitch::XSplit => xsplit,
-                                };
+                                let uniq = core_highest_value(&multi);
+                                let inv = core_inverse(&ones);
+                                let inv_multi = core_multiply(&inv, &observed);
 
-                                let (horizontal, vertical) = create_height_map(
-                                    &mut pos_tl.0,
-                                    &mut pos_tr.0,
-                                    &mut pos_bl.0,
-                                    &mut pos_br.0,
-                                    sub_quads,
-                                );
-
-                                let height_map = map_averages(&horizontal, &vertical);
-                                let scaler = rotate(&scaler, points, i);
-
-                                stitch_tiles(
-                                    &mut pos_tl.0,
-                                    &mut pos_tr.0,
-                                    &mut pos_bl.0,
-                                    &mut pos_br.0,
-                                    &height_map,
-                                    &scaler,
-                                    sub_quads,
-                                );
-
-                                set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
-                                set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
-                                set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
-                                set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
-
-                                continue 'tiles;
+                                if core_contains(&inv_multi, uniq) {
+                                    continue 'rotation;
+                                }
+                                temp = core_lower_index(&temp);
                             }
+
+                            let scaler = match conf.stitch {
+                                Stitch::Horizontal => horizontal,
+                                Stitch::Vertical => vertical,
+                                Stitch::Corner => corner,
+                                Stitch::TSplit => tsplit,
+                                Stitch::XSplit => xsplit,
+                            };
+
+                            let (horizontal, vertical) = create_height_map(
+                                &mut pos_tl.0,
+                                &mut pos_tr.0,
+                                &mut pos_bl.0,
+                                &mut pos_br.0,
+                                sub_quads,
+                            );
+
+                            let height_map = map_averages(&horizontal, &vertical);
+                            let scaler = rotate(&scaler, points, i);
+
+                            stitch_tiles(
+                                &mut pos_tl.0,
+                                &mut pos_tr.0,
+                                &mut pos_bl.0,
+                                &mut pos_br.0,
+                                &height_map,
+                                &scaler,
+                                sub_quads,
+                            );
+
+                            set_mesh_position(&pos_tl.0, &pos_tl.1, &mut meshes);
+                            set_mesh_position(&pos_tr.0, &pos_tr.1, &mut meshes);
+                            set_mesh_position(&pos_bl.0, &pos_bl.1, &mut meshes);
+                            set_mesh_position(&pos_br.0, &pos_br.1, &mut meshes);
+
+                            continue 'tiles;
                         }
                     }
                 }

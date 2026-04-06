@@ -1,11 +1,11 @@
 use bevy::{mesh::VertexAttributeValues, prelude::*};
 
-use crate::world::components::{Land, TilePos, TileWorld};
+use crate::world::{components::{Ground, TileWorld}, tile_pos::TilePos};
 
 pub fn tile_mesh_positions(
     world: &TileWorld,
     tile: TilePos,
-    query: &Query<&Mesh3d, With<Land>>,
+    query: &Query<&Mesh3d, With<Ground>>,
     meshes: &Assets<Mesh>,
 ) -> Option<(Vec<[f32; 3]>, Handle<Mesh>)> {
     if let Some(handle) = mesh_on_tile(&world, tile, &query) {
@@ -22,7 +22,7 @@ pub fn tile_mesh_positions(
 pub fn tile_mesh_colors(
     world: &TileWorld,
     tile: TilePos,
-    query: &Query<&Mesh3d, With<Land>>,
+    query: &Query<&Mesh3d, With<Ground>>,
     meshes: &Assets<Mesh>,
 ) -> Option<(Vec<[f32; 4]>, Handle<Mesh>)> {
     if let Some(handle) = mesh_on_tile(&world, tile, &query) {
@@ -39,7 +39,7 @@ pub fn tile_mesh_colors(
 pub fn mesh_on_tile(
     world: &TileWorld,
     tile: TilePos,
-    query: &Query<&Mesh3d, With<Land>>,
+    query: &Query<&Mesh3d, With<Ground>>,
 ) -> Option<Handle<Mesh>> {
     if let Some(t) = world.ground.get(&tile) {
         if let Ok(mesh3d) = query.get(t.entity.entity()) {
