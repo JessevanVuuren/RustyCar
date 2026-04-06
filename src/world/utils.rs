@@ -1,16 +1,14 @@
 use crate::world::{
     components::{
-        BASE_ASSET, Comp, Dirt, Fence, Flower, GroundId, Ground, GroundConfig, Log, Model, Mushroom,
-        Object, Offset, Placement, Range, Rock, Rotation, StaticWorld, Surface, TileType,
-        TileWorld, Tree, Value,
+        BASE_ASSET, Comp, Fence, Flower, Log, Model, Mushroom, Object, Offset, Placement, Range,
+        Rock, Rotation, Surface, Tree, Value,
     },
     tile_pos::TilePos,
 };
 use bevy::prelude::*;
-use rand::{RngExt, SeedableRng, rngs::SmallRng};
+use rand::{RngExt, rngs::SmallRng};
 
 use std::f32::consts::FRAC_PI_2;
-use std::iter;
 
 pub fn range_from_surfaces(surface: &Surface) -> impl Iterator<Item = TilePos> {
     let positive = surface.positive.iter().flat_map(|positive| match positive {
@@ -38,10 +36,8 @@ pub fn add_component_to_entity(commands: &mut Commands, component: &Comp, id: En
         Comp::Fence => commands.entity(id).insert(Fence),
         Comp::Tree => commands.entity(id).insert(Tree),
         Comp::Rock => commands.entity(id).insert(Rock),
-        Comp::Dirt => commands.entity(id).insert(Dirt),
         Comp::Log => commands.entity(id).insert(Log),
         Comp::None => panic!("None is invalid Component type"),
-        Comp::Ground(_) => panic!("Non configurable land Tile"),
     };
 }
 

@@ -1,38 +1,23 @@
 use crate::{
-    extra::{
-        math::{ease_in_quint, lerp, s_curve},
-        utils::rotate,
-    },
+    extra::{math::lerp, utils::rotate},
     world::{
+        components::{COLOR_PRECISION, Ground, StaticWorld, TileType, TileWorld},
+        ground::mesh_utils::{set_mesh_colors, tile_mesh_colors},
         tile_pos::TilePos,
-        components::{
-            COLOR_PRECISION, Comp, Ground, Range, StaticWorld, TileType, TileWorld,
-        },
-        ground::mesh_utils::{set_mesh_colors, tile_mesh_colors, tile_mesh_positions},
         utils::range_from_surfaces,
-
     },
 };
 use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use rand_distr::{Distribution, Normal};
 
-use std::{
-    collections::HashMap,
-    f32::consts::{FRAC_2_PI, FRAC_PI_2, PI},
-    thread,
-    time::Instant,
-};
+use std::collections::HashMap;
 
-use bevy::{math::ops::sqrt, mesh::VertexAttributeValues, prelude::*};
-use std::{collections::HashSet, iter};
+use bevy::prelude::*;
+use std::collections::HashSet;
 
 pub fn color_fade(
-    mut commands: Commands,
     static_world: Res<StaticWorld>,
-    mut world: ResMut<TileWorld>,
-    assets: Res<AssetServer>,
+    world: Res<TileWorld>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Ground>>,
 ) {
     let mut rng = SmallRng::seed_from_u64(1604);
@@ -50,8 +35,7 @@ pub fn color_fade(
                     continue 'tiles;
                 }
 
-                if let Some((mut color, handler)) = tile_mesh_colors(&world, tile, &query, &meshes)
-                {
+                if let Some((color, handler)) = tile_mesh_colors(&world, tile, &query, &meshes) {
                     let info = tile_color_info(&color, sub_quads);
                     avg_colors.insert(ground, info);
                 }
@@ -72,10 +56,10 @@ pub fn color_fade(
             let range = range_from_surfaces(&block.surface);
 
             'tiles: for tile in range {
-                let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
-                let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
-                let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
-                let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
+                let tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
+                let tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
+                let tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
+                let tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
 
                 let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
                 let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
@@ -205,8 +189,6 @@ fn lerp_color_attrib(t: f32, color1: [f32; 4], color2: [f32; 4]) -> [f32; 4] {
 }
 
 fn tile_color_info(tile: &[[f32; 4]], sub_quads: i32) -> ([f32; 4], Vec<[i32; 4]>) {
-    let points = sub_quads - 1;
-
     let mut color = tile[0];
     let mut colors = HashSet::new();
 
@@ -246,10 +228,6 @@ fn mix_tile(
         tile[i * 6 + 4] = color_lerp;
         tile[i * 6 + 5] = color_lerp;
     }
-}
-
-fn ramp_map(size: i32, intensity: f32) -> impl Iterator<Item = f32> {
-    (0..size * size).map(move |i| (i % size) as f32 / (size - 1) as f32)
 }
 
 fn corner_map(size: i32, intensity: f32) -> impl Iterator<Item = f32> {

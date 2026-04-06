@@ -5,7 +5,6 @@ mod world;
 mod world_config;
 
 use bevy::{
-    camera::ScalingMode,
     color::palettes::css::{BLUE, GREEN, RED},
     dev_tools::fps_overlay::{FpsOverlayConfig, FpsOverlayPlugin, FrameTimeGraphConfig},
     prelude::*,

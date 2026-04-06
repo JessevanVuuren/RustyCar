@@ -1,22 +1,15 @@
 use crate::world::{
-    components::{
-        BASE_ASSET, Comp, Dirt, Fence, Flower, GroundId, Ground, GroundConfig, Log, Model, Mushroom,
-        Object, Offset, Placement, Range, Rock, Rotation, StaticWorld, TileType, TileWorld, Tree,
-        Value,
-    },
+    components::{Ground, GroundId, StaticWorld, TileType, TileWorld},
     ground::ground::ground_plane,
-    tile_pos::TilePos,
     utils::range_from_surfaces,
 };
 use bevy::prelude::*;
-use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{f32::consts::FRAC_PI_2, iter, slice::from_ref};
+use rand::{SeedableRng, rngs::SmallRng};
 
 pub fn spawn_ground(
     mut commands: Commands,
     static_world: Res<StaticWorld>,
     mut world: ResMut<TileWorld>,
-    assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {

@@ -1,25 +1,18 @@
 use crate::{
     extra::{
-        math::{ease_in_quint, lerp, s_curve},
+        math::{lerp, s_curve},
         utils::rotate,
     },
     world::{
         components::{
-            Comp, Ground, GroundConfig, Model, Offset, Placement, QUAD_POINTS, Range, Rotation,
-            StaticWorld, TILE_SIZE, TileType, TileWorld, Value,
+            Ground, QUAD_POINTS, StaticWorld, TileType, TileWorld,
         },
-        tile_pos::TilePos,
         ground::mesh_utils::{set_mesh_position, tile_mesh_positions},
+        tile_pos::TilePos,
         utils::range_from_surfaces,
     },
 };
-use bevy::{
-    mesh::VertexAttributeValues, prelude::*,
-    render::render_resource::encase::vector::AsMutVectorParts,
-};
-use rand::{RngExt, SeedableRng, rngs::SmallRng};
-use std::{collections::HashMap, f32::consts::FRAC_PI_2, iter, ops::Mul, sync::Arc};
-use std::{thread, time::Instant};
+use bevy::prelude::*;
 
 enum Stitch {
     Horizontal,
@@ -54,12 +47,9 @@ const CONFIGURATION: [PatchWorks; 4] = [
 ];
 
 pub fn ground_fade(
-    mut commands: Commands,
     static_world: Res<StaticWorld>,
-    mut world: ResMut<TileWorld>,
-    assets: Res<AssetServer>,
+    world: Res<TileWorld>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     query: Query<&Mesh3d, With<Ground>>,
 ) {
     for block in &static_world.blocks {
@@ -80,10 +70,10 @@ pub fn ground_fade(
             let range = range_from_surfaces(&block.surface);
 
             'tiles: for tile in range {
-                let mut tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
-                let mut tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
-                let mut tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
-                let mut tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
+                let tile_tl = TilePos::new(tile.x + 0, tile.z + 0); // top      left
+                let tile_tr = TilePos::new(tile.x + 1, tile.z + 0); // top      right
+                let tile_bl = TilePos::new(tile.x + 0, tile.z + 1); // bottom   left
+                let tile_br = TilePos::new(tile.x + 1, tile.z + 1); // bottom   right
 
                 let ground_tl = world.ground.get(&tile_tl).map_or(0, |f| f.id); // top      left
                 let ground_tr = world.ground.get(&tile_tr).map_or(0, |f| f.id); // top      right
@@ -101,7 +91,7 @@ pub fn ground_fade(
                     }
                     let observed = [ground_tl, ground_tr, ground_bl, ground_br];
 
-                    'config: for conf in CONFIGURATION {
+                    for conf in CONFIGURATION {
                         'rotation: for i in 0..4 {
                             let highest = core_highest_value(&conf.template);
                             let mut temp = core_rotate(&conf.template, i);
@@ -418,26 +408,20 @@ fn core_contains(core: &[usize; 4], number: usize) -> bool {
 }
 
 fn smooth_xsplit(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
-    let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
+    let vertical: Vec<f32> = smooth_bump(size, intensity, spread).collect();
     let horizontal: Vec<f32> = rotate(&vertical, size, 1);
 
-    (0..size * size).map(move |i| {
-        let x = i % size;
-        let y = i / size;
-
-        horizontal[i as usize].max(vertical[i as usize])
-    })
+    (0..size * size).map(move |i| horizontal[i as usize].max(vertical[i as usize]))
 }
 
 fn smooth_tsplit(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
-    let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
+    let vertical: Vec<f32> = smooth_bump(size, intensity, spread).collect();
     let horizontal: Vec<f32> = rotate(&vertical, size, 1);
 
     let half = size / 2;
 
     (0..size * size).map(move |i| {
         let x = i % size;
-        let y = i / size;
 
         if x > half {
             vertical[i as usize]
@@ -448,7 +432,7 @@ fn smooth_tsplit(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item =
 }
 
 fn smooth_corner(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f32> {
-    let vertical: Vec<f32> = smooth_bump(size, 2.0, 0.4).collect();
+    let vertical: Vec<f32> = smooth_bump(size, intensity, spread).collect();
     let horizontal: Vec<f32> = rotate(&vertical, size, 1);
 
     let half = size / 2;
@@ -474,7 +458,6 @@ fn smooth_bump(size: i32, intensity: f32, spread: f32) -> impl Iterator<Item = f
     let half = size / 2;
     (0..size * size).map(move |i| {
         let x = i % size;
-        let y = i / size;
 
         if x < spread {
             0.0

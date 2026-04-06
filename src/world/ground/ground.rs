@@ -27,10 +27,6 @@ fn linear_to_rgba(rgb: LinearRgba) -> [f32; 4] {
     [rgb.red, rgb.green, rgb.blue, 1.0]
 }
 
-fn rgba_to_linear(rgb: LinearRgba) -> [f32; 4] {
-    [rgb.red, rgb.green, rgb.blue, 1.0]
-}
-
 fn color_mix(a: LinearRgba, b: LinearRgba, t: f32) -> LinearRgba {
     Color::linear_rgb(
         a.red + (b.red - a.red) * t,

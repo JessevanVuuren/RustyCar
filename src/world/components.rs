@@ -105,8 +105,6 @@ pub struct Fence;
 #[derive(Component)]
 pub struct Tree;
 #[derive(Component)]
-pub struct Dirt;
-#[derive(Component)]
 pub struct Log;
 #[derive(Component)]
 pub struct Object;
@@ -115,11 +113,9 @@ pub struct Object;
 pub enum Comp {
     Mushroom,
     Flower,
-    Ground(GroundConfig),
     Fence,
     Tree,
     Rock,
-    Dirt,
     Log,
     #[default]
     None,
