@@ -1,19 +1,15 @@
 pub mod components;
 pub mod ground;
-pub mod spawn_land;
-pub mod spawn_models;
-pub mod spawn_patches;
-pub mod utils;
+pub mod spawn;
 pub mod tile_pos;
+pub mod utils;
 
 use bevy::prelude::*;
 
 use crate::world::{
     components::{StaticWorld, TileWorld},
     ground::{color_fade::color_fade, ground_fade::ground_fade, ground_offset::ground_offset},
-    spawn_land::spawn_ground,
-    spawn_models::spawn_models,
-    spawn_patches::spawn_patches,
+    spawn::{spawn_ground::spawn_ground, spawn_models::spawn_models, spawn_patches::spawn_patches},
 };
 
 pub struct WorldPlugin {
