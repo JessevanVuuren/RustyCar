@@ -1,4 +1,5 @@
 #![allow(unused)]
+mod animal;
 mod car;
 mod extra;
 mod world;
@@ -14,6 +15,7 @@ use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
 
 use crate::{
+    animal::AnimalPlugin,
     car::components::Car,
     world::WorldPlugin,
     world_config::{grass_with_patches, large_grass_test, multiple_surface, test_world},
@@ -21,10 +23,10 @@ use crate::{
 
 fn main() {
     // let static_world = multiple_surface();
-    let static_world = test_world();
+    // let static_world = test_world();
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
-    // let static_world = grass_with_patches();
+    let static_world = grass_with_patches();
     // let static_world = multiple_surface();
 
     App::new()
@@ -44,6 +46,7 @@ fn main() {
         ))
         // .add_plugins(CarPlugin)
         .add_plugins(WorldPlugin { static_world })
+        .add_plugins(AnimalPlugin)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_camera)
         .add_systems(Update, xyz_gismos)
@@ -72,16 +75,17 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
     // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    // let focus = Vec3::new(6.0, 0.0, 6.0);
-    // let offset = Transform::from_xyz(23.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(15.0, 0.0, 15.0);
-    let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(6.0, 0.0, 6.0);
+    let offset = Transform::from_xyz(23.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
+    // let focus = Vec3::new(15.0, 0.0, 15.0);
+    // let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(60.0, 0.0, 60.0);
     // let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
 
     commands.spawn((
         DirectionalLight {
-            color: Color::srgb(1., 0.95, 0.7),
+            color: Color::srgb(1.0, 0.95, 0.7),
+            // color: Color::srgb(1.0, 1.0, 1.0),
             illuminance: 5_000.,
             shadows_enabled: true,
             ..default()
