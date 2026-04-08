@@ -1,63 +1,65 @@
-use bevy::{prelude::*, scene::SceneInstanceReady};
+use crate::animal::components::{
+    AnimalAnimations, AnimalLibrary, AnimalState, Butterfly, ButterflyMovement, ButterflyState
+};
+use bevy::prelude::*;
+use std::collections::HashMap;
 
-use crate::animal::components::AnimationToPlay;
-
-pub const BASE_ASSET: &str = "models/";
-
-pub fn spawn_butterfly(
+pub fn spawn_animations(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
-    let (graph, index) = AnimationGraph::from_clip(
-        asset_server.load(GltfAssetLabel::Animation(1).from_asset("models/animals/butterfly.glb")),
-    );
+    let path = "models/animals/butterfly.glb";
+    let mut library = AnimalLibrary::default();
 
-    let graph_handle = graphs.add(graph);
+    let (graph, node_animations) = AnimationGraph::from_clips([
+        asset_server.load(GltfAssetLabel::Animation(0).from_asset(path)),
+        asset_server.load(GltfAssetLabel::Animation(1).from_asset(path)),
+    ]);
 
-    let mesh_scene = SceneRoot(
-        asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/animals/butterfly.glb")),
-    );
+    library.butterfly = Some(AnimalAnimations {
+        graph: graphs.add(graph),
+        nodes: HashMap::from([
+            (AnimalState::Fly, node_animations[0]),
+            (AnimalState::Idle, node_animations[1]),
+        ]),
+    });
 
-    let animation_to_play = AnimationToPlay {
-        graph_handle,
-        index,
-    };
-
-    commands
-        .spawn((animation_to_play, mesh_scene))
-        .observe(play_animation_when_ready);
+    commands.insert_resource(library);
 }
 
-fn play_animation_when_ready(
-    scene_ready: On<SceneInstanceReady>,
+pub fn spawn_animals(
     mut commands: Commands,
-    children: Query<&Children>,
-    animations_to_play: Query<&AnimationToPlay>,
-    mut players: Query<&mut AnimationPlayer>,
+    asset_server: Res<AssetServer>,
+    library: Res<AnimalLibrary>,
 ) {
-    // The entity we spawned in `setup_mesh_and_animation` is the trigger's target.
-    // Start by finding the AnimationToPlay component we added to that entity.
-    if let Ok(animation_to_play) = animations_to_play.get(scene_ready.entity) {
-        // The SceneRoot component will have spawned the scene as a hierarchy
-        // of entities parented to our entity. Since the asset contained a skinned
-        // mesh and animations, it will also have spawned an animation player
-        // component. Search our entity's descendants to find the animation player.
-        for child in children.iter_descendants(scene_ready.entity) {
-            if let Ok(mut player) = players.get_mut(child) {
-                // Tell the animation player to start the animation and keep
-                // repeating it.
-                //
-                // If you want to try stopping and switching animations, see the
-                // `animated_mesh_control.rs` example.
-                player.play(animation_to_play.index).repeat();
+    let path = "models/animals/butterfly.glb";
+    let size = 0.03;
+    let offset = Vec3::new(0.0, 1.2, 0.0);
 
-                // Add the animation graph. This only needs to be done once to
-                // connect the animation player to the mesh.
-                commands
-                    .entity(child)
-                    .insert(AnimationGraphHandle(animation_to_play.graph_handle.clone()));
-            }
+    if let Some(butterfly_anim) = &library.butterfly {
+        for _ in 0..1 {
+            commands
+                .spawn((
+                    Butterfly,
+                    AnimalState::Fly,
+                    Transform::default(),
+                    Visibility::default(),
+                    butterfly_anim.clone(),
+                    ButterflyState::Searching,
+                    GlobalTransform::default(),
+                    ButterflyMovement::default(),
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(path))),
+                        Transform {
+                            translation: offset,
+                            scale: Vec3::splat(size),
+                            ..default()
+                        },
+                    ));
+                });
         }
     }
 }

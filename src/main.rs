@@ -13,13 +13,27 @@ use bevy::{
 
 use bevy_panorbit_camera::{PanOrbitCamera, PanOrbitCameraPlugin};
 use car::{CarPlugin, spawn::spawn_car};
+use rand::{SeedableRng, rngs::SmallRng};
 
 use crate::{
     animal::AnimalPlugin,
     car::components::Car,
-    world::WorldPlugin,
+    world::{WorldPlugin, components::TileWorld},
     world_config::{grass_with_patches, large_grass_test, multiple_surface, test_world},
 };
+
+#[derive(Resource)]
+pub struct Random {
+    pub rng: SmallRng,
+}
+
+#[derive(Component)]
+struct MainCamera {
+    offset: Transform,
+    current: Vec3,
+}
+
+const SEED: u64 = 1604;
 
 fn main() {
     // let static_world = multiple_surface();
@@ -30,6 +44,7 @@ fn main() {
     // let static_world = multiple_surface();
 
     App::new()
+        .init_resource::<TileWorld>()
         .add_plugins((
             DefaultPlugins,
             FpsOverlayPlugin {
@@ -44,9 +59,14 @@ fn main() {
                 },
             },
         ))
+        .add_systems(Startup, init_rng)
         // .add_plugins(CarPlugin)
-        .add_plugins(WorldPlugin { static_world })
-        .add_plugins(AnimalPlugin)
+        .add_plugins(WorldPlugin {
+            static_world: static_world.clone(),
+        })
+        .add_plugins(AnimalPlugin {
+            static_world: static_world.clone(),
+        })
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_camera)
         .add_systems(Update, xyz_gismos)
@@ -60,10 +80,10 @@ fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
     spawn_car(&mut commands, &asset_server, position);
 }
 
-#[derive(Component)]
-struct MainCamera {
-    offset: Transform,
-    current: Vec3,
+fn init_rng(mut commands: Commands) {
+    commands.insert_resource(Random {
+        rng: SmallRng::seed_from_u64(SEED),
+    });
 }
 
 fn xyz_gismos(mut gizmos: Gizmos) {
