@@ -1,7 +1,7 @@
 use crate::{
-    extra::noise::perlin_2d,
+    extra::{components::Noise, noise::perlin_2d},
     world::{
-        components::{Noise, StaticWorld, TILE_SIZE, TileType, TileWorld},
+        components::{StaticWorld, TILE_SIZE, TileType, TileWorld},
         utils::{
             add_component_to_entity, apply_rotation, apply_scale, apply_transformations,
             model_path, range_from_surfaces, spawn_object,

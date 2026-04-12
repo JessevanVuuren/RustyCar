@@ -1,9 +1,9 @@
 #![allow(unused)]
 mod animal;
 mod car;
+mod config;
 mod extra;
 mod world;
-mod world_config;
 
 use bevy::{
     color::palettes::css::{BLUE, GREEN, RED},
@@ -18,8 +18,8 @@ use rand::{SeedableRng, rngs::SmallRng};
 use crate::{
     animal::AnimalPlugin,
     car::components::Car,
+    config::world_config::{grass_with_patches, large_grass_test, lots_of_patches, multiple_surface, test_world},
     world::{WorldPlugin, components::TileWorld},
-    world_config::{grass_with_patches, large_grass_test, multiple_surface, test_world},
 };
 
 #[derive(Resource)]

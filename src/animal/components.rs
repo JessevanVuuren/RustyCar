@@ -1,8 +1,21 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 
+use crate::extra::components::Range;
+
+#[derive(Clone, Debug)]
+pub struct AnimalModel {
+    pub offset: Transform,
+    pub path: String,
+    pub range: Range<i32>,
+    pub animations: Vec<AnimalState>,
+}
+
 #[derive(Component)]
 pub struct Butterfly;
+
+#[derive(Component)]
+pub struct FlowerBed(u8);
 
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {

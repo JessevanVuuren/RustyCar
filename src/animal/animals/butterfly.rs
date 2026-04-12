@@ -5,7 +5,6 @@ use crate::{
     animal::{
         animals::components::{ButterflyPath, ButterflyState},
         components::{AnimalState, Butterfly, RestTimer, TargetFlower},
-        globals::MIN_DIST,
     },
     extra::{
         math::{arc, flat, normalized_sin, s_curve},
@@ -45,7 +44,7 @@ pub fn butterfly_assign_flower(
             if let Some((flower, stop)) = flowers.iter().choose(&mut random.rng) {
                 let start = start.translation;
                 let stop = stop.translation;
-                let movement = ButterflyPath::max_values(&mut random.rng, start, stop);
+                let movement = ButterflyPath::random(&mut random.rng, start, stop);
 
                 commands
                     .entity(entity)
@@ -70,8 +69,8 @@ pub fn debug_butterfly_path(
         if matches!(state, ButterflyState::Moving) {
             *local = time.elapsed();
 
-            for i in 0..100 {
-                let pos = path.sample(i as f32 / 100 as f32);
+            for i in 0..500 {
+                let pos = path.sample(i as f32 / 500 as f32);
                 dots.push(debug_sphere(
                     pos,
                     0.05,

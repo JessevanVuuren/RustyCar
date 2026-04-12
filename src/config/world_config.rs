@@ -2,12 +2,16 @@ use std::f32::consts::PI;
 
 use bevy::prelude::*;
 
-use crate::world::{
-    components::{
-        Comp, DOWN, LEFT, GroundConfig, Model, Noise, NoiseLevel, Offset, Placement, RIGHT, Range,
-        Rotation, StaticWorld, Surface, TileType, UP, Value, WorldBlock,
+use crate::{
+    animal::components::{AnimalModel, AnimalState},
+    extra::components::{Noise, NoiseLevel, Range, Value},
+    world::{
+        components::{
+            AnimalRoam, Comp, DOWN, GroundConfig, LEFT, Offset, Placement, RIGHT, Rotation,
+            StaticWorld, Surface, TileType, UP, WorldBlock, WorldModel,
+        },
+        tile_pos::TilePos,
     },
-    tile_pos::TilePos,
 };
 
 pub fn multiple_surface() -> StaticWorld {
@@ -65,6 +69,7 @@ pub fn multiple_surface() -> StaticWorld {
                 ],
             },
         }],
+        animals: vec![],
     }
 }
 
@@ -87,7 +92,7 @@ pub fn grass_with_patches() -> StaticWorld {
                         frequency: 0.31,
                         amplitude: 1.0,
                     }],
-                    value_1: vec![Model {
+                    value_1: vec![WorldModel {
                         range: Range::Range(1, 8),
                         comp: Comp::Flower,
                         path: "nature/flower".into(),
@@ -147,6 +152,22 @@ pub fn grass_with_patches() -> StaticWorld {
                 },
             },
         ],
+        animals: vec![AnimalRoam {
+            animal: AnimalModel {
+                offset: Transform {
+                    translation: Vec3::new(0.0, 0.1, 0.0),
+                    scale: Vec3::splat(0.03),
+                    ..default()
+                },
+                path: "animals/butterfly".into(),
+                range: Range::None,
+                animations: vec![AnimalState::Fly, AnimalState::Idle],
+            },
+            surface: Surface {
+                positive: vec![Range::Range(grass_start, grass_stop)],
+                ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
+            },
+        }],
     }
 }
 
@@ -471,6 +492,7 @@ pub fn lots_of_patches() -> StaticWorld {
                 },
             },
         ],
+        animals: vec![],
     }
 }
 
@@ -1078,6 +1100,7 @@ pub fn large_grass_test() -> StaticWorld {
                 },
             },
         ],
+        animals: vec![],
     }
 }
 
@@ -1103,7 +1126,7 @@ pub fn test_world() -> StaticWorld {
                         frequency: 0.1,
                         amplitude: 1.0,
                     }],
-                    value_1: vec![Model {
+                    value_1: vec![WorldModel {
                         range: Range::Range(1, 8),
                         comp: Comp::Flower,
                         path: "nature/flower".into(),
@@ -1127,7 +1150,7 @@ pub fn test_world() -> StaticWorld {
                         frequency: 0.1,
                         amplitude: 1.0,
                     }],
-                    value_1: vec![Model {
+                    value_1: vec![WorldModel {
                         range: Range::Range(1, 4),
                         comp: Comp::Mushroom,
                         path: "nature/mushroom".into(),
@@ -1196,7 +1219,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 8),
                     comp: Comp::Flower,
                     path: "nature/flower".into(),
@@ -1215,7 +1238,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Log,
                     path: "nature/log".into(),
@@ -1234,7 +1257,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Mushroom,
                     path: "nature/mushroom".into(),
@@ -1254,7 +1277,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 6),
                     comp: Comp::Rock,
                     path: "nature/rock".into(),
@@ -1274,7 +1297,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Tree,
                     path: "nature/pine_tree".into(),
@@ -1337,7 +1360,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 8),
                     comp: Comp::Flower,
                     path: "nature/flower".into(),
@@ -1356,7 +1379,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Flower,
                     path: "nature/mushroom".into(),
@@ -1375,7 +1398,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1390,7 +1413,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1405,7 +1428,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1424,7 +1447,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
@@ -1443,7 +1466,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1459,7 +1482,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1475,7 +1498,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1491,7 +1514,7 @@ pub fn test_world() -> StaticWorld {
                 },
             },
             WorldBlock {
-                tiletype: TileType::Models(vec![Model {
+                tiletype: TileType::Models(vec![WorldModel {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
@@ -1507,5 +1530,6 @@ pub fn test_world() -> StaticWorld {
                 },
             },
         ],
+        animals: vec![],
     }
 }

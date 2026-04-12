@@ -7,8 +7,8 @@ use bevy::{
 use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
-    extra::noise::perlin_2d,
-    world::components::{GroundConfig, Noise, TILE_SIZE},
+    extra::{components::Noise, noise::perlin_2d},
+    world::components::{GroundConfig, TILE_SIZE},
 };
 
 fn rgb_lerp(c1: Color, c2: Color, t: f32) -> LinearRgba {

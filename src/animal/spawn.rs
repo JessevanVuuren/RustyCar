@@ -36,10 +36,10 @@ pub fn spawn_animals(
 ) {
     let path = "models/animals/butterfly.glb";
     let size = 0.03;
-    let offset = Vec3::new(0.0, 1.2, 0.0);
+    let offset = Vec3::new(0.0, 0.1, 0.0);
 
     if let Some(butterfly_anim) = &library.butterfly {
-        for _ in 0..1 {
+        for _ in 0..50 {
             commands
                 .spawn((
                     Butterfly,

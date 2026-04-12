@@ -1,10 +1,9 @@
-use crate::world::{
+use crate::{extra::components::{Range, Value}, world::{
     components::{
-        BASE_ASSET, Comp, Fence, Flower, Log, Model, Mushroom, Object, Offset, Placement, Range,
-        Rock, Rotation, Surface, Tree, Value,
+        BASE_ASSET, Comp, Fence, Flower, Log, Mushroom, Object, Offset, Placement, Rock, Rotation, Surface, Tree, WorldModel
     },
     tile_pos::TilePos,
-};
+}};
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
 
@@ -99,7 +98,7 @@ pub fn spawn_object(
         .id()
 }
 
-pub fn model_path(rng: &mut SmallRng, model: &Model) -> String {
+pub fn model_path(rng: &mut SmallRng, model: &WorldModel) -> String {
     let path = format!("{BASE_ASSET}{}", model.path);
 
     match model.range {
