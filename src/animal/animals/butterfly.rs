@@ -1,10 +1,15 @@
+use std::time::Duration;
+
 use crate::{
     Random,
     animal::{
-        components::{
-            AnimalState, Butterfly, ButterflyMovement, ButterflyState, RestTimer, TargetFlower,
-        },
-        globals::{BUTTERFLY_SPEED, MIN_DIST},
+        animals::components::{ButterflyPath, ButterflyState},
+        components::{AnimalState, Butterfly, RestTimer, TargetFlower},
+        globals::MIN_DIST,
+    },
+    extra::{
+        math::{arc, flat, normalized_sin, s_curve},
+        utils::{comma_print, debug_sphere},
     },
     world::components::Flower,
 };
@@ -38,17 +43,50 @@ pub fn butterfly_assign_flower(
     for (entity, start, state) in butterflies {
         if matches!(state, ButterflyState::Searching) {
             if let Some((flower, stop)) = flowers.iter().choose(&mut random.rng) {
-                let distance = start.translation.distance(stop.translation);
+                let start = start.translation;
+                let stop = stop.translation;
+                let movement = ButterflyPath::max_values(&mut random.rng, start, stop);
 
                 commands
                     .entity(entity)
+                    .insert(movement)
                     .insert(TargetFlower(flower))
-                    .insert(ButterflyMovement {
-                        distance,
-                        base_y: start.translation.y,
-                    })
                     .insert(ButterflyState::Moving);
             }
+        }
+    }
+}
+
+pub fn debug_butterfly_path(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut local: Local<Duration>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut dots: Local<Vec<Entity>>,
+    paths: Query<(&ButterflyPath, &ButterflyState), Changed<ButterflyState>>,
+) {
+    for (path, state) in paths {
+        if matches!(state, ButterflyState::Moving) {
+            *local = time.elapsed();
+
+            for i in 0..100 {
+                let pos = path.sample(i as f32 / 100 as f32);
+                dots.push(debug_sphere(
+                    pos,
+                    0.05,
+                    &mut commands,
+                    &mut meshes,
+                    &mut materials,
+                ));
+            }
+        }
+        if matches!(state, ButterflyState::Resting) {
+            let time = time.elapsed() - *local;
+            let speed = path.units_per_sec(time);
+            dots.clear();
+
+            println!("time: {:?}, units/sec: {}", time, speed);
         }
     }
 }
@@ -57,40 +95,27 @@ pub fn animate_butterfly(
     time: Res<Time>,
     mut commands: Commands,
     mut random: ResMut<Random>,
-    flowers: Query<&Transform, (With<Flower>, Without<Butterfly>)>,
     butterflies: Query<
-        (Entity, &mut Transform, &TargetFlower, &ButterflyMovement),
-        With<Butterfly>,
+        (Entity, &mut Transform, &mut ButterflyPath),
+        (With<Butterfly>, With<TargetFlower>),
     >,
 ) {
-    for (entity, mut transform, target, movement) in butterflies {
-        if let Ok(flower) = flowers.get(target.0) {
-            let current_distance = transform.translation.distance(flower.translation);
+    for (entity, mut transform, mut path) in butterflies {
+        path.step(time.delta_secs());
 
-            if current_distance >= MIN_DIST {
-                let dir = (flower.translation - transform.translation).normalize();
-                transform.translation += dir * BUTTERFLY_SPEED * time.delta_secs();
+        if !path.is_finished() {
+            let pos = path.position();
+            let target = path.look_at(pos);
 
-                // let curr = current_distance;
-                // let end = movement.distance;
-
-                // let t = ((curr - MIN_DIST) / (end - MIN_DIST)).clamp(0.0, 1.0);
-                // let amplitude = 4.0 * t * (1.0 - t);
-                // println!("{amplitude}");
-                // transform.translation.y = movement.base_y + amplitude * 10.0;
-
-                transform.look_at(flower.translation, Vec3::Y);
-            } else {
-                let rest = random.rng.random_range(1.0..10.0);
-                let timer = Timer::from_seconds(rest, TimerMode::Once);
-
-                commands
-                    .entity(entity)
-                    .remove::<TargetFlower>()
-                    .insert(RestTimer(timer))
-                    .insert(AnimalState::Idle)
-                    .insert(ButterflyState::Resting);
-            }
+            transform.translation = pos;
+            transform.look_at(target, Vec3::Y);
+        } else {
+            commands
+                .entity(entity)
+                .remove::<TargetFlower>()
+                .insert(RestTimer(path.rest_timer()))
+                .insert(AnimalState::Idle)
+                .insert(ButterflyState::Resting);
         }
     }
 }

@@ -1,5 +1,6 @@
-use crate::animal::components::{
-    AnimalAnimations, AnimalLibrary, AnimalState, Butterfly, ButterflyMovement, ButterflyState
+use crate::animal::{
+    animals::components::{ButterflyPath, ButterflyState},
+    components::{AnimalAnimations, AnimalLibrary, AnimalState, Butterfly},
 };
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -48,7 +49,7 @@ pub fn spawn_animals(
                     butterfly_anim.clone(),
                     ButterflyState::Searching,
                     GlobalTransform::default(),
-                    ButterflyMovement::default(),
+                    ButterflyPath::default(),
                 ))
                 .with_children(|parent| {
                     parent.spawn((

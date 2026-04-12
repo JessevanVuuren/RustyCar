@@ -1,3 +1,5 @@
+use bevy::prelude::*;
+
 pub fn rotate<T: Copy>(array: &[T], size: i32, step: usize) -> Vec<T> {
     let mut rotated = Vec::with_capacity((size * size) as usize);
 
@@ -15,4 +17,24 @@ pub fn rotate<T: Copy>(array: &[T], size: i32, step: usize) -> Vec<T> {
     }
 
     rotated
+}
+
+pub fn comma_print(value: f32) {
+    println!("{}", value.to_string().replace('.', ","));
+}
+
+pub fn debug_sphere(
+    vec: Vec3,
+    size: f32,
+    commands: &mut Commands,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<StandardMaterial>>,
+) -> Entity {
+    commands
+        .spawn((
+            Mesh3d(meshes.add(Sphere::new(size))),
+            MeshMaterial3d(materials.add(Color::srgb_u8(255, 0, 0))),
+            Transform::from_xyz(vec.x, vec.y, vec.z),
+        ))
+        .id()
 }

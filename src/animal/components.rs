@@ -4,19 +4,6 @@ use std::collections::HashMap;
 #[derive(Component)]
 pub struct Butterfly;
 
-#[derive(Component, Default)]
-pub struct ButterflyMovement {
-    pub distance: f32,
-    pub base_y: f32,
-}
-
-#[derive(Component)]
-pub enum ButterflyState {
-    Searching,
-    Moving,
-    Resting,
-}
-
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {
     pub butterfly: Option<AnimalAnimations>,

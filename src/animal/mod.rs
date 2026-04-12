@@ -8,7 +8,9 @@ use bevy::prelude::*;
 
 use crate::{
     animal::{
-        animals::butterfly::{animate_butterfly, butterfly_assign_flower, update_rest_timer},
+        animals::butterfly::{
+            animate_butterfly, butterfly_assign_flower, debug_butterfly_path, update_rest_timer,
+        },
         components::AnimalLibrary,
         spawn::{spawn_animals, spawn_animations},
         systems::{link_animal_animations, update_animal_animations},
@@ -26,6 +28,13 @@ impl Plugin for AnimalPlugin {
         app.add_systems(Startup, (spawn_animations, spawn_animals).chain());
         app.add_systems(Update, (link_animal_animations, update_animal_animations));
         app.add_systems(Update, (update_rest_timer));
-        app.add_systems(Update, (butterfly_assign_flower, animate_butterfly));
+        app.add_systems(
+            Update,
+            (
+                butterfly_assign_flower,
+                animate_butterfly,
+                debug_butterfly_path,
+            ),
+        );
     }
 }
