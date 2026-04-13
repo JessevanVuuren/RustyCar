@@ -74,15 +74,10 @@ pub fn multiple_surface() -> StaticWorld {
 }
 
 pub fn grass_with_patches() -> StaticWorld {
-    // let dirt_start = TilePos::new(3, 3);
-    // let dirt_stop = TilePos::new(6, 6);
-    // let grass_start = TilePos::new(1, 1);
-    // let grass_stop = TilePos::new(8, 8);
-    // let dirt_start = TilePos::new(1, 1);
-    // let dirt_stop = TilePos::new(2, 1);
     let grass_start = TilePos::new(1, 1);
-    // let grass_stop = TilePos::new(10, 10);
-    let grass_stop = TilePos::new(5, 5);
+    let grass_stop = TilePos::new(6, 6);
+    let butterfly_start = TilePos::new(1, 1);
+    let butterfly_stop = TilePos::new(3, 5);
 
     StaticWorld {
         blocks: vec![
@@ -166,7 +161,7 @@ pub fn grass_with_patches() -> StaticWorld {
                 animations: vec![AnimalState::Fly, AnimalState::Idle],
             },
             surface: Surface {
-                positive: vec![Range::Range(grass_start, grass_stop)],
+                positive: vec![Range::Range(butterfly_start, butterfly_stop)],
                 ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
             },
         }],

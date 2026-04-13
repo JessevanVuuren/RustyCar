@@ -17,7 +17,7 @@ pub struct AnimalModel {
 pub struct Butterfly;
 
 #[derive(Component)]
-pub struct FlowerBed(u8);
+pub struct FlowerBed(pub u8);
 
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {
