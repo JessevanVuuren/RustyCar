@@ -7,7 +7,11 @@ use std::{
 use bevy::{math::usize, prelude::*};
 use rand::{RngExt, rngs::SmallRng};
 
-use crate::{animal::components::AnimalModel, extra::components::{Noise, Range, Value}, world::tile_pos::TilePos};
+use crate::{
+    animal::components::{AnimalKind, AnimalModel},
+    extra::components::{Noise, Range, Value},
+    world::tile_pos::TilePos,
+};
 
 pub const TILE_SIZE: f32 = 4.0;
 pub const QUAD_POINTS: i32 = 6;
@@ -124,7 +128,6 @@ pub struct GroundConfig {
     pub stitch_intensity: f32,
     pub stitch_spread: f32,
 }
-
 
 #[derive(Resource, Default, Debug)]
 pub struct TileWorld {

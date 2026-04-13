@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use bevy::prelude::*;
 
 use crate::{
-    animal::components::{AnimalModel, AnimalState},
+    animal::components::{AnimalKind, AnimalModel, AnimalState},
     extra::components::{Noise, NoiseLevel, Range, Value},
     world::{
         components::{
@@ -159,8 +159,10 @@ pub fn grass_with_patches() -> StaticWorld {
                     scale: Vec3::splat(0.03),
                     ..default()
                 },
-                path: "animals/butterfly".into(),
+                amount: 50,
                 range: Range::None,
+                kind: AnimalKind::Butterfly,
+                path: "animals/butterfly".into(),
                 animations: vec![AnimalState::Fly, AnimalState::Idle],
             },
             surface: Surface {

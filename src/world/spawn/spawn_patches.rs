@@ -53,7 +53,7 @@ pub fn spawn_patches(
                         transform.translation.x = x + rng.random_range(-1.0..1.0) * init;
                         transform.translation.z = z + rng.random_range(-1.0..1.0) * init;
 
-                        let path = model_path(&mut rng, &object);
+                        let path = model_path(&mut rng, &object.path, &object.range);
                         let id = spawn_object(&transform, &path, &mut commands, &assets);
 
                         add_component_to_entity(&mut commands, &object.comp, id);

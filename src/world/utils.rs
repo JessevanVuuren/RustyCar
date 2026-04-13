@@ -1,9 +1,13 @@
-use crate::{extra::components::{Range, Value}, world::{
-    components::{
-        BASE_ASSET, Comp, Fence, Flower, Log, Mushroom, Object, Offset, Placement, Rock, Rotation, Surface, Tree, WorldModel
+use crate::{
+    extra::components::{Range, Value},
+    world::{
+        components::{
+            BASE_ASSET, Comp, Fence, Flower, Log, Mushroom, Object, Offset, Placement, Rock,
+            Rotation, Surface, Tree, WorldModel,
+        },
+        tile_pos::TilePos,
     },
-    tile_pos::TilePos,
-}};
+};
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
 
@@ -98,10 +102,19 @@ pub fn spawn_object(
         .id()
 }
 
-pub fn model_path(rng: &mut SmallRng, model: &WorldModel) -> String {
-    let path = format!("{BASE_ASSET}{}", model.path);
+pub fn every_model_path(path: &str, range: &Range<i32>) -> Vec<String> {
+    let path = format!("{BASE_ASSET}{}", path);
+    match *range {
+        Range::Range(a, b) => (a..b).map(|i| format!("{}_{i}.glb", path)).collect(),
+        Range::One(i) => vec![format!("{}_{i}.glb", path)],
+        Range::None => vec![format!("{}.glb", path)],
+    }
+}
 
-    match model.range {
+pub fn model_path(rng: &mut SmallRng, path: &str, range: &Range<i32>) -> String {
+    let path = format!("{BASE_ASSET}{path}");
+
+    match *range {
         Range::None => format!("{path}.glb"),
         Range::One(i) => format!("{path}_{i}.glb"),
         Range::Range(a, b) => format!("{path}_{}.glb", rng.random_range(a..=b)),

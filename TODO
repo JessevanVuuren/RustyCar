@@ -1,0 +1,2 @@
+- Split up TileWorld in two Resources
+- Global random system, with one dedicated for world generation

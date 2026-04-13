@@ -1,66 +1,46 @@
-use crate::animal::{
-    animals::components::{ButterflyPath, ButterflyState},
-    components::{AnimalAnimations, AnimalLibrary, AnimalState, Butterfly},
+use crate::{
+    Random,
+    animal::components::{AnimalAnimations, AnimalKind, AnimalLibrary},
+    extra::components::Range,
+    world::{components::StaticWorld, utils::every_model_path},
 };
 use bevy::prelude::*;
-use std::collections::HashMap;
 
 pub fn spawn_animations(
     mut commands: Commands,
+    static_world: Res<StaticWorld>,
     asset_server: Res<AssetServer>,
     mut graphs: ResMut<Assets<AnimationGraph>>,
 ) {
-    let path = "models/animals/butterfly.glb";
     let mut library = AnimalLibrary::default();
 
-    let (graph, node_animations) = AnimationGraph::from_clips([
-        asset_server.load(GltfAssetLabel::Animation(0).from_asset(path)),
-        asset_server.load(GltfAssetLabel::Animation(1).from_asset(path)),
-    ]);
+    for roam in &static_world.animals {
+        let animal = &roam.animal;
+        let paths = every_model_path(&animal.path, &animal.range);
 
-    library.butterfly = Some(AnimalAnimations {
-        graph: graphs.add(graph),
-        nodes: HashMap::from([
-            (AnimalState::Fly, node_animations[0]),
-            (AnimalState::Idle, node_animations[1]),
-        ]),
-    });
+        for path in paths {
+            let animations = animal.animations.iter().enumerate().map(|(i, _)| {
+                asset_server.load(GltfAssetLabel::Animation(i).from_asset(path.clone()))
+            });
 
-    commands.insert_resource(library);
-}
+            let (graph, node_animations) = AnimationGraph::from_clips(animations);
 
-pub fn spawn_animals(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    library: Res<AnimalLibrary>,
-) {
-    let path = "models/animals/butterfly.glb";
-    let size = 0.03;
-    let offset = Vec3::new(0.0, 0.1, 0.0);
+            let nodes = animal
+                .animations
+                .iter()
+                .enumerate()
+                .map(|(i, state)| (*state, node_animations[i]))
+                .collect();
 
-    if let Some(butterfly_anim) = &library.butterfly {
-        for _ in 0..50 {
-            commands
-                .spawn((
-                    Butterfly,
-                    AnimalState::Fly,
-                    Transform::default(),
-                    Visibility::default(),
-                    butterfly_anim.clone(),
-                    ButterflyState::Searching,
-                    GlobalTransform::default(),
-                    ButterflyPath::default(),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset(path))),
-                        Transform {
-                            translation: offset,
-                            scale: Vec3::splat(size),
-                            ..default()
-                        },
-                    ));
-                });
+            library.animals.insert(
+                animal.kind,
+                AnimalAnimations {
+                    graph: graphs.add(graph),
+                    nodes,
+                },
+            );
         }
     }
+
+    commands.insert_resource(library);
 }

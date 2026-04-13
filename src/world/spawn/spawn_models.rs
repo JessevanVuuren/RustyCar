@@ -1,7 +1,5 @@
 use crate::world::{
-    components::{
-        StaticWorld, TileType, TileWorld,
-    },
+    components::{StaticWorld, TileType, TileWorld},
     utils::{
         add_component_to_entity, apply_transformations, model_path, range_from_surfaces,
         spawn_object, tiles_range_from_placement,
@@ -21,7 +19,7 @@ pub fn spawn_models(
     for block in &static_world.blocks {
         if let TileType::Models(models) = &block.tiletype {
             for object in models {
-                let path = model_path(&mut rng, &object);
+                let path = model_path(&mut rng, &object.path, &object.range);
 
                 let range = range_from_surfaces(&block.surface).collect();
                 let tiles = tiles_range_from_placement(&mut rng, &object.placement.amount, range);

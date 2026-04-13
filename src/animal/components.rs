@@ -5,8 +5,10 @@ use crate::extra::components::Range;
 
 #[derive(Clone, Debug)]
 pub struct AnimalModel {
-    pub offset: Transform,
+    pub amount: i32,
     pub path: String,
+    pub kind: AnimalKind,
+    pub offset: Transform,
     pub range: Range<i32>,
     pub animations: Vec<AnimalState>,
 }
@@ -19,7 +21,7 @@ pub struct FlowerBed(u8);
 
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {
-    pub butterfly: Option<AnimalAnimations>,
+    pub animals: HashMap<AnimalKind, AnimalAnimations>,
 }
 
 #[derive(Component)]
@@ -41,4 +43,9 @@ pub enum AnimalState {
     Run,
     Fly,
     Sting,
+}
+
+#[derive(Component, Clone, PartialEq, Eq, Hash, Copy, Debug)]
+pub enum AnimalKind {
+    Butterfly,
 }

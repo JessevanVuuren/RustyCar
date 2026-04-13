@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     Random,
     animal::{
-        animals::components::{ButterflyPath, ButterflyState},
+        butterfly::components::{ButterflyPath, ButterflyState},
         components::{AnimalState, Butterfly, RestTimer, TargetFlower},
     },
     extra::{
