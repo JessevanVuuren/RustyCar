@@ -1,11 +1,24 @@
-use crate::world::{components::TileWorld, tile_pos::TilePos};
 use bevy::prelude::*;
 
-pub fn world_entitys_from_range(
-    range: &[TilePos],
-    world: &TileWorld,
-) -> impl Iterator<Item = Entity> {
-    range
-        .iter()
-        .flat_map(|tile| world.models.get(tile).into_iter().flatten().copied())
+use crate::{
+    animal::components::{AnimalAnimations, AnimalKind, AnimalLibrary},
+    world::components::{AnimalRoam, StaticWorld},
+};
+
+pub fn animal_kind_from_static<'a, 'b>(
+    static_world: &'a StaticWorld,
+    library: &'b AnimalLibrary,
+    kind: AnimalKind,
+) -> Vec<(&'a AnimalRoam, &'b AnimalAnimations)> {
+    let mut animals = Vec::new();
+
+    for roam in &static_world.animals {
+        if let Some(animation) = library.animals.get(&roam.animal.kind)
+            && roam.animal.kind == kind
+        {
+            animals.push((roam, animation));
+        }
+    }
+
+    animals
 }

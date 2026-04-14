@@ -4,7 +4,7 @@ use std::{
     ops::{Add, Sub},
 };
 
-use bevy::{math::usize, prelude::*};
+use bevy::{ecs::query::QueryData, math::usize, prelude::*, reflect::TypeData};
 use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
@@ -129,14 +129,22 @@ pub struct GroundConfig {
     pub stitch_spread: f32,
 }
 
+#[derive(Clone, Debug)]
+pub struct GroundId {
+    pub entity: Entity,
+    pub id: usize,
+}
+
 #[derive(Resource, Default, Debug)]
 pub struct TileWorld {
     pub ground: HashMap<TilePos, GroundId>,
     pub models: HashMap<TilePos, Vec<Entity>>,
 }
 
-#[derive(Clone, Debug)]
-pub struct GroundId {
-    pub entity: Entity,
-    pub id: usize,
+impl TileWorld {
+    pub fn all_entitys_from_range(&self, range: &[TilePos]) -> impl Iterator<Item = Entity> {
+        range
+            .iter()
+            .flat_map(|tile| self.models.get(tile).into_iter().flatten().copied())
+    }
 }

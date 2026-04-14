@@ -154,6 +154,7 @@ pub fn grass_with_patches() -> StaticWorld {
                     scale: Vec3::splat(0.03),
                     ..default()
                 },
+                variation: 0.01,
                 amount: 50,
                 range: Range::None,
                 kind: AnimalKind::Butterfly,
@@ -161,7 +162,10 @@ pub fn grass_with_patches() -> StaticWorld {
                 animations: vec![AnimalState::Fly, AnimalState::Idle],
             },
             surface: Surface {
-                positive: vec![Range::Range(butterfly_start, butterfly_stop)],
+                positive: vec![
+                    Range::Range(butterfly_start, butterfly_stop),
+                    Range::One(grass_stop),
+                ],
                 ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
             },
         }],

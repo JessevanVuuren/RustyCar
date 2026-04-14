@@ -4,7 +4,7 @@ use crate::{
     Random,
     animal::{
         butterfly::components::{ButterflyPath, ButterflyState},
-        components::{AnimalState, Butterfly, RestTimer, TargetFlower},
+        components::{AnimalState, Butterfly, FlowerBed, RestTimer, TargetFlower},
     },
     extra::{
         math::{arc, flat, normalized_sin, s_curve},
@@ -36,15 +36,16 @@ pub fn update_rest_timer(
 pub fn butterfly_assign_flower(
     mut commands: Commands,
     mut random: ResMut<Random>,
-    flowers: Query<(Entity, &Transform), With<Flower>>,
-    butterflies: Query<(Entity, &Transform, &ButterflyState), With<Butterfly>>,
+    flowers: Query<(Entity, &Transform, &FlowerBed), With<Flower>>,
+    butterflies: Query<(Entity, &Transform, &ButterflyState, &FlowerBed), With<Butterfly>>,
 ) {
-    for (entity, start, state) in butterflies {
+    for (entity, start, state, butterfly_id) in butterflies {
         if matches!(state, ButterflyState::Searching) {
-            if let Some((flower, stop)) = flowers.iter().choose(&mut random.rng) {
-                let start = start.translation;
-                let stop = stop.translation;
-                let movement = ButterflyPath::random(&mut random.rng, start, stop);
+            let flowers = flowers.iter().filter(|(_, _, id)| id.0 == butterfly_id.0);
+
+            if let Some((flower, stop, id)) = flowers.choose(&mut random.rng) {
+                let movement =
+                    ButterflyPath::random(&mut random.rng, start.translation, stop.translation);
 
                 commands
                     .entity(entity)

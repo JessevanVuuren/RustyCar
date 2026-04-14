@@ -9,6 +9,7 @@ pub struct AnimalModel {
     pub path: String,
     pub kind: AnimalKind,
     pub offset: Transform,
+    pub variation: f32,
     pub range: Range<i32>,
     pub animations: Vec<AnimalState>,
 }
