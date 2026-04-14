@@ -22,7 +22,7 @@ pub struct FlowerBed(pub u8);
 
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {
-    pub animals: HashMap<AnimalKind, AnimalAnimations>,
+    pub animals: HashMap<AnimalKind, HashMap<usize, AnimalAnimations>>,
 }
 
 #[derive(Component)]

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     Random,
     animal::components::{AnimalAnimations, AnimalKind, AnimalLibrary},
@@ -18,7 +20,9 @@ pub fn spawn_animations(
         let animal = &roam.animal;
         let paths = every_model_path(&animal.path, &animal.range);
 
-        for path in paths {
+        let mut kinds = HashMap::new();
+
+        for (i, path) in paths.iter().enumerate() {
             let animations = animal.animations.iter().enumerate().map(|(i, _)| {
                 asset_server.load(GltfAssetLabel::Animation(i).from_asset(path.clone()))
             });
@@ -32,14 +36,15 @@ pub fn spawn_animations(
                 .map(|(i, state)| (*state, node_animations[i]))
                 .collect();
 
-            library.animals.insert(
-                animal.kind,
+            kinds.insert(
+                i + 1,
                 AnimalAnimations {
                     graph: graphs.add(graph),
                     nodes,
                 },
             );
         }
+        library.animals.insert(animal.kind, kinds);
     }
 
     commands.insert_resource(library);

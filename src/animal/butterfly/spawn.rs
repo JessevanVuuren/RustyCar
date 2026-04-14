@@ -29,7 +29,6 @@ pub fn spawn_butterfly(
     let flower_bed_id = random.rng.random_range(0..u8::MAX);
 
     for (roam, animation) in butterflies {
-        let path = model_path(&mut random.rng, &roam.animal.path, &roam.animal.range);
         let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
         let entitys = world.all_entitys_from_range(&range);
 
@@ -40,6 +39,17 @@ pub fn spawn_butterfly(
         }
 
         for _ in 0..roam.animal.amount {
+            let path = model_path(&mut random.rng, &roam.animal.path, &roam.animal.range);
+            let number: usize = path
+                .rsplit('_')
+                .next()
+                .unwrap()
+                .split('.')
+                .next()
+                .unwrap()
+                .parse()
+                .unwrap();
+
             let mut offset = roam.animal.offset.clone();
             let variation = -roam.animal.variation..roam.animal.variation;
             offset.scale += Vec3::splat(random.rng.random_range(variation));
@@ -48,7 +58,7 @@ pub fn spawn_butterfly(
                 .spawn((
                     Butterfly,
                     AnimalState::Fly,
-                    animation.clone(),
+                    animation.get(&number).unwrap().clone(),
                     Transform::default(),
                     Visibility::default(),
                     FlowerBed(flower_bed_id),

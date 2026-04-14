@@ -105,7 +105,7 @@ pub fn spawn_object(
 pub fn every_model_path(path: &str, range: &Range<i32>) -> Vec<String> {
     let path = format!("{BASE_ASSET}{}", path);
     match *range {
-        Range::Range(a, b) => (a..b).map(|i| format!("{}_{i}.glb", path)).collect(),
+        Range::Range(a, b) => (a..=b).map(|i| format!("{}_{i}.glb", path)).collect(),
         Range::One(i) => vec![format!("{}_{i}.glb", path)],
         Range::None => vec![format!("{}.glb", path)],
     }

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bevy::prelude::*;
 
 use crate::{
@@ -9,7 +11,7 @@ pub fn animal_kind_from_static<'a, 'b>(
     static_world: &'a StaticWorld,
     library: &'b AnimalLibrary,
     kind: AnimalKind,
-) -> Vec<(&'a AnimalRoam, &'b AnimalAnimations)> {
+) -> Vec<(&'a AnimalRoam, &'b HashMap<usize, AnimalAnimations>)> {
     let mut animals = Vec::new();
 
     for roam in &static_world.animals {
