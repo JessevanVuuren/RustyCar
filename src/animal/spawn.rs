@@ -20,8 +20,6 @@ pub fn spawn_animations(
         let animal = &roam.animal;
         let paths = every_model_path(&animal.path, &animal.range);
 
-        let mut kinds = HashMap::new();
-
         for (i, path) in paths.iter().enumerate() {
             let animations = animal.animations.iter().enumerate().map(|(i, _)| {
                 asset_server.load(GltfAssetLabel::Animation(i).from_asset(path.clone()))
@@ -36,15 +34,14 @@ pub fn spawn_animations(
                 .map(|(i, state)| (*state, node_animations[i]))
                 .collect();
 
-            kinds.insert(
-                i + 1,
+            library.animals.insert(
+                path.clone(),
                 AnimalAnimations {
                     graph: graphs.add(graph),
                     nodes,
                 },
             );
         }
-        library.animals.insert(animal.kind, kinds);
     }
 
     commands.insert_resource(library);

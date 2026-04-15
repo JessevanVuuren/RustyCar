@@ -25,10 +25,10 @@ pub fn spawn_butterfly(
     asset_server: Res<AssetServer>,
     flowers: Query<(), With<Flower>>,
 ) {
-    let butterflies = animal_kind_from_static(&static_world, &library, AnimalKind::Butterfly);
+    let butterflies = animal_kind_from_static(&static_world, AnimalKind::Butterfly);
     let flower_bed_id = random.rng.random_range(0..u8::MAX);
 
-    for (roam, animation) in butterflies {
+    for roam in butterflies {
         let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
         let entitys = world.all_entitys_from_range(&range);
 
@@ -40,25 +40,18 @@ pub fn spawn_butterfly(
 
         for _ in 0..roam.animal.amount {
             let path = model_path(&mut random.rng, &roam.animal.path, &roam.animal.range);
-            let number: usize = path
-                .rsplit('_')
-                .next()
-                .unwrap()
-                .split('.')
-                .next()
-                .unwrap()
-                .parse()
-                .unwrap();
-
+            let animation = library.animals.get(&path).unwrap();
+            
             let mut offset = roam.animal.offset.clone();
             let variation = -roam.animal.variation..roam.animal.variation;
             offset.scale += Vec3::splat(random.rng.random_range(variation));
+
 
             commands
                 .spawn((
                     Butterfly,
                     AnimalState::Fly,
-                    animation.get(&number).unwrap().clone(),
+                    animation.clone(),
                     Transform::default(),
                     Visibility::default(),
                     FlowerBed(flower_bed_id),

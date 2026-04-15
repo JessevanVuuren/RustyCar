@@ -155,8 +155,8 @@ pub fn grass_with_patches() -> StaticWorld {
                     ..default()
                 },
                 variation: 0.01,
-                amount: 50,
-                range: Range::Range(1, 2),
+                amount: 4,
+                range: Range::Range(1, 3),
                 kind: AnimalKind::Butterfly,
                 path: "animals/butterfly".into(),
                 animations: vec![AnimalState::Fly, AnimalState::Idle],
