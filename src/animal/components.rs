@@ -12,13 +12,27 @@ pub struct AnimalModel {
     pub variation: f32,
     pub range: Range<i32>,
     pub animations: Vec<AnimalState>,
+    pub behavior: ButterflyBehavior,
+}
+
+#[derive(Clone, Debug, Component)]
+pub enum ButterflyBehavior {
+    FreeFly,
+    Swirling,
+    FlowerBed,
 }
 
 #[derive(Component)]
-pub struct Butterfly;
+pub struct FreeFly;
+
+#[derive(Component)]
+pub struct Swirling;
 
 #[derive(Component)]
 pub struct FlowerBed(pub u8);
+
+#[derive(Component)]
+pub struct Butterfly;
 
 #[derive(Resource, Default)]
 pub struct AnimalLibrary {

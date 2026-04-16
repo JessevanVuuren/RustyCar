@@ -1,9 +1,10 @@
 use crate::{
     Random,
     animal::{
-        butterfly::components::{ButterflyPath, ButterflyState},
+        butterfly::components::{ButterflyState, FlowerBedPath},
         components::{
-            AnimalAnimations, AnimalKind, AnimalLibrary, AnimalState, Butterfly, FlowerBed,
+            AnimalAnimations, AnimalKind, AnimalLibrary, AnimalState, Butterfly, ButterflyBehavior,
+            FlowerBed,
         },
         utils::animal_kind_from_static,
     },
@@ -14,7 +15,7 @@ use crate::{
     },
 };
 use bevy::prelude::*;
-use rand::RngExt;
+use rand::{RngExt, rngs::SmallRng};
 
 pub fn spawn_butterfly(
     mut commands: Commands,
@@ -26,37 +27,22 @@ pub fn spawn_butterfly(
     flowers: Query<(), With<Flower>>,
 ) {
     let butterflies = animal_kind_from_static(&static_world, AnimalKind::Butterfly);
-    let flower_bed_id = random.rng.random_range(0..u8::MAX);
 
     for roam in butterflies {
-        let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
-        let entitys = world.all_entitys_from_range(&range);
-
-        for entity in entitys {
-            if flowers.get(entity).is_ok() {
-                commands.entity(entity).insert(FlowerBed(flower_bed_id));
-            }
-        }
-
         for _ in 0..roam.animal.amount {
             let path = model_path(&mut random.rng, &roam.animal.path, &roam.animal.range);
             let animation = library.animals.get(&path).unwrap();
-            
+
             let mut offset = roam.animal.offset.clone();
             let variation = -roam.animal.variation..roam.animal.variation;
             offset.scale += Vec3::splat(random.rng.random_range(variation));
 
-
-            commands
+            let id = commands
                 .spawn((
                     Butterfly,
-                    AnimalState::Fly,
                     animation.clone(),
                     Transform::default(),
                     Visibility::default(),
-                    FlowerBed(flower_bed_id),
-                    ButterflyPath::default(),
-                    ButterflyState::Searching,
                     GlobalTransform::default(),
                 ))
                 .with_children(|parent| {
@@ -66,7 +52,43 @@ pub fn spawn_butterfly(
                         ),
                         offset,
                     ));
-                });
+                })
+                .id();
+
+            match roam.animal.behavior {
+                ButterflyBehavior::FreeFly => {}
+                ButterflyBehavior::Swirling => {}
+                ButterflyBehavior::FlowerBed => {
+                    flower_bed_behavior(&mut commands, &mut random.rng, &world, flowers, roam, id);
+                }
+            }
         }
     }
+}
+
+fn flower_bed_behavior(
+    commands: &mut Commands,
+    rng: &mut SmallRng,
+    world: &TileWorld,
+    flowers: Query<(), With<Flower>>,
+    roam: &AnimalRoam,
+    id: Entity,
+) {
+    let flower_bed_id = rng.random_range(0..u8::MAX);
+    let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
+
+    let entitys = world.all_entitys_from_range(&range);
+
+    for entity in entitys {
+        if flowers.get(entity).is_ok() {
+            commands.entity(entity).insert(FlowerBed(flower_bed_id));
+        }
+    }
+
+    commands
+        .entity(id)
+        .insert(FlowerBed(flower_bed_id))
+        .insert(FlowerBedPath::default())
+        .insert(ButterflyState::Searching)
+        .insert(AnimalState::Fly);
 }

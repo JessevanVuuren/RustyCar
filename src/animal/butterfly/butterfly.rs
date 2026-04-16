@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{
     Random,
     animal::{
-        butterfly::components::{ButterflyPath, ButterflyState},
+        butterfly::components::{FlowerBedPath, ButterflyState},
         components::{AnimalState, Butterfly, FlowerBed, RestTimer, TargetFlower},
     },
     extra::{
@@ -37,7 +37,10 @@ pub fn butterfly_assign_flower(
     mut commands: Commands,
     mut random: ResMut<Random>,
     flowers: Query<(Entity, &Transform, &FlowerBed), With<Flower>>,
-    butterflies: Query<(Entity, &Transform, &ButterflyState, &FlowerBed), With<Butterfly>>,
+    butterflies: Query<
+        (Entity, &Transform, &ButterflyState, &FlowerBed),
+        (With<Butterfly>, With<FlowerBed>),
+    >,
 ) {
     for (entity, start, state, butterfly_id) in butterflies {
         if matches!(state, ButterflyState::Searching) {
@@ -45,7 +48,7 @@ pub fn butterfly_assign_flower(
 
             if let Some((flower, stop, id)) = flowers.choose(&mut random.rng) {
                 let movement =
-                    ButterflyPath::random(&mut random.rng, start.translation, stop.translation);
+                    FlowerBedPath::random(&mut random.rng, start.translation, stop.translation);
 
                 commands
                     .entity(entity)
@@ -64,7 +67,7 @@ pub fn debug_butterfly_path(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut dots: Local<Vec<Entity>>,
-    paths: Query<(&ButterflyPath, &ButterflyState), Changed<ButterflyState>>,
+    paths: Query<(&FlowerBedPath, &ButterflyState), Changed<ButterflyState>>,
 ) {
     for (path, state) in paths {
         if matches!(state, ButterflyState::Moving) {
@@ -96,7 +99,7 @@ pub fn animate_butterfly(
     mut commands: Commands,
     mut random: ResMut<Random>,
     butterflies: Query<
-        (Entity, &mut Transform, &mut ButterflyPath),
+        (Entity, &mut Transform, &mut FlowerBedPath),
         (With<Butterfly>, With<TargetFlower>),
     >,
 ) {

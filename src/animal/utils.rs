@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use crate::{
-    animal::components::{AnimalAnimations, AnimalKind, AnimalLibrary},
+    animal::components::{
+        AnimalAnimations, AnimalKind, AnimalLibrary, ButterflyBehavior, FlowerBed, FreeFly,
+        Swirling,
+    },
     world::components::{AnimalRoam, StaticWorld},
 };
 

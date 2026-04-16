@@ -18,7 +18,7 @@ pub enum ButterflyState {
 }
 
 #[derive(Component, Default)]
-pub struct ButterflyPath {
+pub struct FlowerBedPath {
     front: Vec3,
     right: Vec3,
 
@@ -36,7 +36,7 @@ pub struct ButterflyPath {
     step: f32,
 }
 
-impl ButterflyPath {
+impl FlowerBedPath {
     pub fn max_values(rng: &mut SmallRng, start: Vec3, stop: Vec3) -> Self {
         Self::pre_compute(
             FLY_PATH_MAX_FREQUENCY.end,
@@ -93,7 +93,7 @@ impl ButterflyPath {
         let direction = (start - stop).normalize();
         let right = direction.cross(Vec3::Y).normalize();
 
-        ButterflyPath {
+        FlowerBedPath {
             front: direction,
             frequency,
             amplitude,
