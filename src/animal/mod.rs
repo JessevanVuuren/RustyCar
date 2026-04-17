@@ -11,7 +11,8 @@ use crate::{
     animal::{
         butterfly::{
             butterfly::{
-                animate_butterfly, butterfly_assign_flower, debug_butterfly_path, update_rest_timer,
+                // butterfly_animate_flowerbed, butterfly_assign_flowerbed_flower, debug_butterfly_path, update_rest_timer,
+                butterfly_animate_freefly, butterfly_assign_freefly_target, debug_butterfly_path, update_rest_timer
             },
             spawn::spawn_butterfly,
         },
@@ -32,7 +33,11 @@ impl Plugin for AnimalPlugin {
         app.add_systems(Startup, (spawn_animations, (spawn_butterfly)).chain());
         app.add_systems(Update, (link_animal_animations, update_animal_animations));
         app.add_systems(Update, (update_rest_timer));
-        app.add_systems(Update, (butterfly_assign_flower, animate_butterfly));
+        // app.add_systems(Update, (butterfly_assign_flowerbed_flower, butterfly_animate_flowerbed));
+        app.add_systems(
+            Update,
+            (butterfly_assign_freefly_target, butterfly_animate_freefly),
+        );
 
         // debug helper functions
         // app.add_systems(Update, debug_butterfly_path);

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 
-use crate::extra::components::Range;
+use crate::{extra::components::Range, world::tile_pos::TilePos};
 
 #[derive(Clone, Debug)]
 pub struct AnimalModel {
@@ -23,7 +23,7 @@ pub enum ButterflyBehavior {
 }
 
 #[derive(Component)]
-pub struct FreeFly;
+pub struct FreeFly(pub Vec<TilePos>);
 
 #[derive(Component)]
 pub struct Swirling;
@@ -43,7 +43,10 @@ pub struct AnimalLibrary {
 pub struct RestTimer(pub Timer);
 
 #[derive(Component)]
-pub struct TargetFlower(pub Entity);
+pub struct TargetEntity(pub Entity);
+
+#[derive(Component)]
+pub struct TargetVec3(pub Vec3);
 
 #[derive(Component, Clone)]
 pub struct AnimalAnimations {

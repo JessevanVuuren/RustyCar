@@ -3,8 +3,11 @@ use std::time::Duration;
 use crate::{
     Random,
     animal::{
-        butterfly::components::{FlowerBedPath, ButterflyState},
-        components::{AnimalState, Butterfly, FlowerBed, RestTimer, TargetFlower},
+        butterfly::components::{ButterflyState, NaturalFlyPath},
+        components::{
+            AnimalState, Butterfly, FlowerBed, FreeFly, RestTimer, TargetEntity, TargetVec3,
+        },
+        globals::FREE_FLY_HEIGHT,
     },
     extra::{
         math::{arc, flat, normalized_sin, s_curve},
@@ -33,13 +36,34 @@ pub fn update_rest_timer(
     }
 }
 
-pub fn butterfly_assign_flower(
+pub fn butterfly_assign_freefly_target(
+    mut commands: Commands,
+    mut random: ResMut<Random>,
+    butterflies: Query<(Entity, &Transform, &FreeFly), (With<Butterfly>, Without<TargetVec3>)>,
+) {
+    for (entity, start, freefly) in butterflies {
+        if let Some(tile) = freefly.0.iter().choose(&mut random.rng) {
+            let mut stop = tile.to_random_world_transform(&mut random.rng);
+            stop.translation.y = FREE_FLY_HEIGHT;
+
+            let movement =
+                NaturalFlyPath::random(&mut random.rng, start.translation, stop.translation);
+
+            commands
+                .entity(entity)
+                .insert(movement)
+                .insert(TargetVec3(stop.translation));
+        }
+    }
+}
+
+pub fn butterfly_assign_flowerbed_flower(
     mut commands: Commands,
     mut random: ResMut<Random>,
     flowers: Query<(Entity, &Transform, &FlowerBed), With<Flower>>,
     butterflies: Query<
         (Entity, &Transform, &ButterflyState, &FlowerBed),
-        (With<Butterfly>, With<FlowerBed>),
+        (With<Butterfly>, Without<TargetEntity>),
     >,
 ) {
     for (entity, start, state, butterfly_id) in butterflies {
@@ -48,14 +72,65 @@ pub fn butterfly_assign_flower(
 
             if let Some((flower, stop, id)) = flowers.choose(&mut random.rng) {
                 let movement =
-                    FlowerBedPath::random(&mut random.rng, start.translation, stop.translation);
+                    NaturalFlyPath::random(&mut random.rng, start.translation, stop.translation);
 
                 commands
                     .entity(entity)
                     .insert(movement)
-                    .insert(TargetFlower(flower))
+                    .insert(TargetEntity(flower))
                     .insert(ButterflyState::Moving);
             }
+        }
+    }
+}
+
+pub fn butterfly_animate_flowerbed(
+    time: Res<Time>,
+    mut commands: Commands,
+    butterflies: Query<
+        (Entity, &mut Transform, &mut NaturalFlyPath),
+        (With<Butterfly>, With<FlowerBed>, With<TargetEntity>),
+    >,
+) {
+    for (entity, mut transform, mut path) in butterflies {
+        path.step(time.delta_secs());
+
+        if !path.is_finished() {
+            let pos = path.position();
+            let target = path.look_at(pos);
+
+            transform.translation = pos;
+            transform.look_at(target, Vec3::Y);
+        } else {
+            commands
+                .entity(entity)
+                .remove::<TargetEntity>()
+                .insert(RestTimer(path.rest_timer()))
+                .insert(AnimalState::Idle)
+                .insert(ButterflyState::Resting);
+        }
+    }
+}
+
+pub fn butterfly_animate_freefly(
+    time: Res<Time>,
+    mut commands: Commands,
+    butterflies: Query<
+        (Entity, &mut Transform, &mut NaturalFlyPath),
+        (With<Butterfly>, With<FreeFly>, With<TargetVec3>),
+    >,
+) {
+    for (entity, mut transform, mut path) in butterflies {
+        path.step(time.delta_secs());
+
+        if !path.is_finished() {
+            let pos = path.position();
+            let target = path.look_at(pos);
+
+            transform.translation = pos;
+            transform.look_at(target, Vec3::Y);
+        } else {
+            commands.entity(entity).remove::<TargetVec3>();
         }
     }
 }
@@ -67,7 +142,7 @@ pub fn debug_butterfly_path(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut dots: Local<Vec<Entity>>,
-    paths: Query<(&FlowerBedPath, &ButterflyState), Changed<ButterflyState>>,
+    paths: Query<(&NaturalFlyPath, &ButterflyState), Changed<ButterflyState>>,
 ) {
     for (path, state) in paths {
         if matches!(state, ButterflyState::Moving) {
@@ -90,35 +165,6 @@ pub fn debug_butterfly_path(
             dots.clear();
 
             println!("time: {:?}, units/sec: {}", time, speed);
-        }
-    }
-}
-
-pub fn animate_butterfly(
-    time: Res<Time>,
-    mut commands: Commands,
-    mut random: ResMut<Random>,
-    butterflies: Query<
-        (Entity, &mut Transform, &mut FlowerBedPath),
-        (With<Butterfly>, With<TargetFlower>),
-    >,
-) {
-    for (entity, mut transform, mut path) in butterflies {
-        path.step(time.delta_secs());
-
-        if !path.is_finished() {
-            let pos = path.position();
-            let target = path.look_at(pos);
-
-            transform.translation = pos;
-            transform.look_at(target, Vec3::Y);
-        } else {
-            commands
-                .entity(entity)
-                .remove::<TargetFlower>()
-                .insert(RestTimer(path.rest_timer()))
-                .insert(AnimalState::Idle)
-                .insert(ButterflyState::Resting);
         }
     }
 }

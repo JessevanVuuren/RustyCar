@@ -1,10 +1,10 @@
 use crate::{
     Random,
     animal::{
-        butterfly::components::{ButterflyState, FlowerBedPath},
+        butterfly::components::{ButterflyState, NaturalFlyPath},
         components::{
             AnimalAnimations, AnimalKind, AnimalLibrary, AnimalState, Butterfly, ButterflyBehavior,
-            FlowerBed,
+            FlowerBed, FreeFly,
         },
         utils::animal_kind_from_static,
     },
@@ -56,7 +56,9 @@ pub fn spawn_butterfly(
                 .id();
 
             match roam.animal.behavior {
-                ButterflyBehavior::FreeFly => {}
+                ButterflyBehavior::FreeFly => {
+                    free_fly_behavior(&mut commands, roam, id);
+                }
                 ButterflyBehavior::Swirling => {}
                 ButterflyBehavior::FlowerBed => {
                     flower_bed_behavior(&mut commands, &mut random.rng, &world, flowers, roam, id);
@@ -64,6 +66,17 @@ pub fn spawn_butterfly(
             }
         }
     }
+}
+
+fn free_fly_behavior(commands: &mut Commands, roam: &AnimalRoam, id: Entity) {
+    let range = range_from_surfaces(&roam.surface).collect();
+
+    commands
+        .entity(id)
+        .insert(FreeFly(range))
+        .insert(NaturalFlyPath::default())
+        .insert(ButterflyState::Searching)
+        .insert(AnimalState::Fly);
 }
 
 fn flower_bed_behavior(
@@ -88,7 +101,7 @@ fn flower_bed_behavior(
     commands
         .entity(id)
         .insert(FlowerBed(flower_bed_id))
-        .insert(FlowerBedPath::default())
+        .insert(NaturalFlyPath::default())
         .insert(ButterflyState::Searching)
         .insert(AnimalState::Fly);
 }
