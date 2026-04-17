@@ -1,11 +1,11 @@
 use crate::{
     Random,
     animal::{
-        butterfly::components::{ButterflyState, NaturalFlyPath},
         components::{
             AnimalAnimations, AnimalKind, AnimalLibrary, AnimalState, Butterfly, ButterflyBehavior,
             FlowerBed, FreeFly,
         },
+        natural_fly_path::NaturalFlyPath,
         utils::animal_kind_from_static,
     },
     world::{
@@ -75,7 +75,6 @@ fn free_fly_behavior(commands: &mut Commands, roam: &AnimalRoam, id: Entity) {
         .entity(id)
         .insert(FreeFly(range))
         .insert(NaturalFlyPath::default())
-        .insert(ButterflyState::Searching)
         .insert(AnimalState::Fly);
 }
 
@@ -101,7 +100,5 @@ fn flower_bed_behavior(
     commands
         .entity(id)
         .insert(FlowerBed(flower_bed_id))
-        .insert(NaturalFlyPath::default())
-        .insert(ButterflyState::Searching)
-        .insert(AnimalState::Fly);
+        .insert(AnimalState::Idle);
 }

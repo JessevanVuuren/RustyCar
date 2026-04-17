@@ -1,4 +1,7 @@
-use crate::animal::components::{AnimalAnimations, AnimalState};
+use crate::animal::{
+    components::{AnimalAnimations, AnimalState, RestTimer},
+    natural_fly_path::NaturalFlyPath,
+};
 use bevy::prelude::*;
 use std::time::Duration;
 
@@ -44,6 +47,41 @@ pub fn update_animal_animations(
                 }
                 break;
             }
+        }
+    }
+}
+
+pub fn animal_animate_natural_fly_path(
+    time: Res<Time>,
+    mut commands: Commands,
+    query: Query<(Entity, &mut Transform, &mut NaturalFlyPath)>,
+) {
+    for (entity, mut transform, mut path) in query {
+        path.step(time.delta_secs());
+
+        if !path.is_finished() {
+            let pos = path.position();
+            let target = path.look_at(pos);
+
+            transform.translation = pos;
+            transform.look_at(target, Vec3::Y);
+        }
+    }
+}
+
+pub fn update_rest_timer(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut RestTimer), With<AnimalState>>,
+) {
+    for (entity, mut timer) in &mut query {
+        timer.0.tick(time.delta());
+
+        if timer.0.is_finished() {
+            commands
+                .entity(entity)
+                .remove::<RestTimer>()
+                .insert(AnimalState::Idle);
         }
     }
 }

@@ -161,36 +161,36 @@ pub fn grass_with_patches() -> StaticWorld {
                     kind: AnimalKind::Butterfly,
                     path: "animals/butterfly".into(),
                     behavior: ButterflyBehavior::FreeFly,
-                    animations: vec![AnimalState::Fly, AnimalState::Idle],
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
                 },
                 surface: Surface {
                     positive: vec![Range::Range(grass_start, grass_stop)],
                     ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
                 },
             },
-            // AnimalRoam {
-            //     animal: AnimalModel {
-            //         offset: Transform {
-            //             translation: Vec3::new(0.0, 0.1, 0.0),
-            //             scale: Vec3::splat(0.03),
-            //             ..default()
-            //         },
-            //         amount: 1,
-            //         variation: 0.01,
-            //         range: Range::Range(1, 3),
-            //         kind: AnimalKind::Butterfly,
-            //         path: "animals/butterfly".into(),
-            //         behavior: ButterflyBehavior::FlowerBed,
-            //         animations: vec![AnimalState::Fly, AnimalState::Idle],
-            //     },
-            //     surface: Surface {
-            //         positive: vec![
-            //             Range::Range(butterfly_start, butterfly_stop),
-            //             Range::One(grass_stop),
-            //         ],
-            //         ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
-            //     },
-            // },
+            AnimalRoam {
+                animal: AnimalModel {
+                    offset: Transform {
+                        translation: Vec3::new(0.0, 0.1, 0.0),
+                        scale: Vec3::splat(0.03),
+                        ..default()
+                    },
+                    amount: 1,
+                    variation: 0.01,
+                    range: Range::Range(1, 3),
+                    kind: AnimalKind::Butterfly,
+                    path: "animals/butterfly".into(),
+                    behavior: ButterflyBehavior::FlowerBed,
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
+                },
+                surface: Surface {
+                    positive: vec![
+                        Range::Range(butterfly_start, butterfly_stop),
+                        Range::One(grass_stop),
+                    ],
+                    ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
+                },
+            },
         ],
     }
 }

@@ -10,13 +10,6 @@ use crate::{
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
 
-#[derive(Component)]
-pub enum ButterflyState {
-    Searching,
-    Moving,
-    Resting,
-}
-
 #[derive(Component, Default)]
 pub struct NaturalFlyPath {
     front: Vec3,

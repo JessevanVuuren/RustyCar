@@ -1,9 +1,7 @@
 | Global
 - Split up TileWorld in two Resources
 - Global random system, with one dedicated for world generation
-
+- Fix static global variables
 
 | Before merge butterfly
-- Remove animal_in_world branch
-- Add 1 or 2 extra butterflies
 - Cluster of butterflies static on tile
