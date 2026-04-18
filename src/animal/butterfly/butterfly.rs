@@ -1,22 +1,44 @@
-use std::time::Duration;
+use std::{ops::Neg, time::Duration};
 
 use crate::{
     Random,
     animal::{
+        behaviors::{NaturalFlyPath, SwirlingPath},
         components::{
-            AnimalState, Butterfly, FlowerBed, FreeFly, RestTimer, TargetEntity, TargetVec3,
+            AnimalState, Butterfly, FlowerBed, FreeFly, RestTimer, Swirling, TargetEntity,
+            TargetVec3,
         },
         globals::FREE_FLY_HEIGHT,
-        natural_fly_path::NaturalFlyPath,
     },
     extra::{
-        math::{arc, flat, normalized_sin, s_curve},
+        math::{abs_sin, arc, flat, s_curve},
         utils::{comma_print, debug_sphere},
     },
     world::components::Flower,
 };
 use bevy::prelude::*;
 use rand::{RngExt, seq::IteratorRandom};
+
+pub fn butterfly_swirl(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut last_pos: Local<Vec3>,
+    mut random: ResMut<Random>,
+    butterflies: Query<
+        (Entity, &mut Transform, &mut SwirlingPath),
+        (With<Butterfly>, With<Swirling>),
+    >,
+) {
+    for (entity, mut transform, mut swirling) in butterflies {
+        let pos = swirling.sample(time.elapsed_secs());
+        let target = swirling.look_at(pos);
+
+        transform.translation = pos;
+        transform.look_at(target, Vec3::Y);
+
+        swirling.last_pos(pos);
+    }
+}
 
 pub fn butterfly_assign_freefly_target(
     mut commands: Commands,

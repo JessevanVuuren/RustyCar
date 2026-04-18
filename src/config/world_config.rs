@@ -165,7 +165,7 @@ pub fn grass_with_patches() -> StaticWorld {
                 },
                 surface: Surface {
                     positive: vec![Range::Range(grass_start, grass_stop)],
-                    ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
+                    ..default()
                 },
             },
             AnimalRoam {
@@ -188,7 +188,27 @@ pub fn grass_with_patches() -> StaticWorld {
                         Range::Range(butterfly_start, butterfly_stop),
                         Range::One(grass_stop),
                     ],
-                    ..default() // negative: vec![Range::Range(dirt_start, dirt_stop)],
+                    ..default()
+                },
+            },
+            AnimalRoam {
+                animal: AnimalModel {
+                    offset: Transform {
+                        translation: Vec3::new(0.0, 0.1, 0.0),
+                        scale: Vec3::splat(0.03),
+                        ..default()
+                    },
+                    amount: 10,
+                    variation: 0.01,
+                    range: Range::Range(1, 3),
+                    kind: AnimalKind::Butterfly,
+                    path: "animals/butterfly".into(),
+                    behavior: ButterflyBehavior::Swirling,
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
+                },
+                surface: Surface {
+                    positive: vec![Range::Range(grass_start, grass_stop)],
+                    ..default()
                 },
             },
         ],
@@ -1554,6 +1574,67 @@ pub fn test_world() -> StaticWorld {
                 },
             },
         ],
-        animals: vec![],
+        animals: vec![
+            AnimalRoam {
+                animal: AnimalModel {
+                    offset: Transform {
+                        translation: Vec3::new(0.0, 0.1, 0.0),
+                        scale: Vec3::splat(0.03),
+                        ..default()
+                    },
+                    amount: 10,
+                    variation: 0.01,
+                    range: Range::Range(1, 3),
+                    kind: AnimalKind::Butterfly,
+                    path: "animals/butterfly".into(),
+                    behavior: ButterflyBehavior::Swirling,
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
+                },
+                surface: Surface {
+                    positive: vec![Range::One(TilePos::new(18, 12))],
+                    ..default()
+                },
+            },
+            AnimalRoam {
+                animal: AnimalModel {
+                    offset: Transform {
+                        translation: Vec3::new(0.0, 0.1, 0.0),
+                        scale: Vec3::splat(0.03),
+                        ..default()
+                    },
+                    amount: 10,
+                    variation: 0.01,
+                    range: Range::Range(1, 3),
+                    kind: AnimalKind::Butterfly,
+                    path: "animals/butterfly".into(),
+                    behavior: ButterflyBehavior::FreeFly,
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
+                },
+                surface: Surface {
+                    positive: vec![Range::Range(jungle_start, play_stop)],
+                    ..default()
+                },
+            },
+            AnimalRoam {
+                animal: AnimalModel {
+                    offset: Transform {
+                        translation: Vec3::new(0.0, 0.1, 0.0),
+                        scale: Vec3::splat(0.03),
+                        ..default()
+                    },
+                    amount: 10,
+                    variation: 0.01,
+                    range: Range::Range(1, 3),
+                    kind: AnimalKind::Butterfly,
+                    path: "animals/butterfly".into(),
+                    behavior: ButterflyBehavior::FlowerBed,
+                    animations: vec![AnimalState::Fly, AnimalState::Rest],
+                },
+                surface: Surface {
+                    positive: vec![Range::Range(play_start, play_stop)],
+                    ..default()
+                },
+            },
+        ],
     }
 }

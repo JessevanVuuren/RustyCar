@@ -3,9 +3,11 @@ use std::time::Duration;
 use crate::{
     animal::globals::{
         FLY_PATH_MAX_AMPLITUDE, FLY_PATH_MAX_FREQUENCY, FLY_PATH_MAX_HEIGHT,
-        FLY_PATH_MAX_INTENSITY, FLY_PATH_MAX_REST, FLY_PATH_MAX_UPS,
+        FLY_PATH_MAX_INTENSITY, FLY_PATH_MAX_REST, FLY_PATH_MAX_UPS, SWIRLING_MAX_AMPLITUDE,
+        SWIRLING_MAX_FREQUENCY, SWIRLING_MAX_HEIGHT, SWIRLING_MAX_RADIUS,
+        SWIRLING_MAX_RADIUS_AMPLITUDE, SWIRLING_MAX_RADIUS_FREQUENCY, SWIRLING_MAX_UPS,
     },
-    extra::math::{arc, normalized_sin, rand_vec3_range, random_vec3},
+    extra::math::{abs_sin, arc, rand_vec3_range, random_vec3},
 };
 use bevy::prelude::*;
 use rand::{RngExt, rngs::SmallRng};
@@ -133,7 +135,7 @@ impl NaturalFlyPath {
         let freq = self.frequency;
         let ampl = self.amplitude;
 
-        let u2d = normalized_sin(step * freq.y) * ampl.y * arc;
+        let u2d = abs_sin(step * freq.y) * ampl.y * arc;
         let s2s = (step * freq.x).sin() * ampl.x * arc;
         let f2b = (step * freq.z).cos() * ampl.z * arc;
 
@@ -150,5 +152,110 @@ impl NaturalFlyPath {
         let mut target = self.stop;
         target.y = pos.y;
         target
+    }
+}
+
+#[derive(Component, Default)]
+pub struct SwirlingPath {
+    point: Vec3,
+    last: Vec3,
+
+    speed: f32,
+    radius: f32,
+    height: f32,
+    radius_amplitude: f32,
+    radius_frequency: f32,
+
+    frequency: Vec3,
+    amplitude: Vec3,
+}
+
+impl SwirlingPath {
+    pub fn max_values(point: Vec3) -> Self {
+        Self::pre_compute(
+            SWIRLING_MAX_FREQUENCY.end,
+            SWIRLING_MAX_AMPLITUDE.end,
+            SWIRLING_MAX_UPS.end,
+            SWIRLING_MAX_RADIUS.end,
+            SWIRLING_MAX_HEIGHT.end,
+            SWIRLING_MAX_RADIUS_AMPLITUDE.end,
+            SWIRLING_MAX_RADIUS_FREQUENCY.end,
+            point,
+        )
+    }
+
+    pub fn random(rng: &mut SmallRng, point: Vec3) -> Self {
+        Self::pre_compute(
+            rand_vec3_range(rng, SWIRLING_MAX_FREQUENCY),
+            rand_vec3_range(rng, SWIRLING_MAX_AMPLITUDE),
+            rng.random_range(SWIRLING_MAX_UPS),
+            rng.random_range(SWIRLING_MAX_RADIUS),
+            rng.random_range(SWIRLING_MAX_HEIGHT),
+            rng.random_range(SWIRLING_MAX_RADIUS_AMPLITUDE),
+            rng.random_range(SWIRLING_MAX_RADIUS_FREQUENCY),
+            point,
+        )
+    }
+
+    pub fn min_values(point: Vec3) -> Self {
+        Self::pre_compute(
+            SWIRLING_MAX_FREQUENCY.start,
+            SWIRLING_MAX_AMPLITUDE.start,
+            SWIRLING_MAX_UPS.start,
+            SWIRLING_MAX_RADIUS.start,
+            SWIRLING_MAX_HEIGHT.start,
+            SWIRLING_MAX_RADIUS_AMPLITUDE.start,
+            SWIRLING_MAX_RADIUS_FREQUENCY.start,
+            point,
+        )
+    }
+
+    fn pre_compute(
+        frequency: Vec3,
+        amplitude: Vec3,
+        speed: f32,
+        radius: f32,
+        height: f32,
+        radius_amplitude: f32,
+        radius_frequency: f32,
+        point: Vec3,
+    ) -> Self {
+        let last = point;
+
+        SwirlingPath {
+            last,
+            point,
+            speed,
+            height,
+            radius,
+            radius_amplitude,
+            radius_frequency,
+            frequency,
+            amplitude,
+        }
+    }
+
+    pub fn sample(&self, step: f32) -> Vec3 {
+        let mut pos = self.point.clone();
+        let step = step * self.speed;
+
+        let radius = (step * self.radius_frequency).sin() * self.radius_amplitude + self.radius;
+
+        pos.x += (step * self.frequency.x).sin() * self.amplitude.x * radius;
+        pos.z += (step * self.frequency.z).cos() * self.amplitude.z * radius;
+        pos.y += (step * self.frequency.y).sin() * self.amplitude.y;
+
+        pos.y += self.height;
+
+        pos
+    }
+
+    pub fn last_pos(&mut self, pos: Vec3) {
+        self.last = pos;
+    }
+
+    pub fn look_at(&self, pos: Vec3) -> Vec3 {
+        let dir = (pos - self.last).normalize();
+        dir + pos
     }
 }

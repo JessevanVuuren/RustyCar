@@ -58,10 +58,7 @@ pub struct AnimalAnimations {
 pub enum AnimalState {
     Idle,
     Rest,
-    Walk,
-    Run,
     Fly,
-    Sting,
 }
 
 #[derive(Component, Clone, PartialEq, Eq, Hash, Copy, Debug)]

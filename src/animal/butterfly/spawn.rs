@@ -1,11 +1,11 @@
 use crate::{
     Random,
     animal::{
+        behaviors::{NaturalFlyPath, SwirlingPath},
         components::{
             AnimalAnimations, AnimalKind, AnimalLibrary, AnimalState, Butterfly, ButterflyBehavior,
-            FlowerBed, FreeFly,
+            FlowerBed, FreeFly, Swirling,
         },
-        natural_fly_path::NaturalFlyPath,
         utils::animal_kind_from_static,
     },
     world::{
@@ -15,7 +15,7 @@ use crate::{
     },
 };
 use bevy::prelude::*;
-use rand::{RngExt, rngs::SmallRng};
+use rand::{RngExt, rngs::SmallRng, seq::IndexedRandom};
 
 pub fn spawn_butterfly(
     mut commands: Commands,
@@ -29,6 +29,10 @@ pub fn spawn_butterfly(
     let butterflies = animal_kind_from_static(&static_world, AnimalKind::Butterfly);
 
     for roam in butterflies {
+        let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
+        let tile = range.choose(&mut random.rng).unwrap_or(&TilePos::ZERO);
+        let flower_bed_id = random.rng.random_range(0..u8::MAX);
+
         for _ in 0..roam.animal.amount {
             let path = model_path(&mut random.rng, &roam.animal.path, &roam.animal.range);
             let animation = library.animals.get(&path).unwrap();
@@ -59,13 +63,32 @@ pub fn spawn_butterfly(
                 ButterflyBehavior::FreeFly => {
                     free_fly_behavior(&mut commands, roam, id);
                 }
-                ButterflyBehavior::Swirling => {}
+                ButterflyBehavior::Swirling => {
+                    swirling_behavior(&mut commands, &mut random.rng, roam, id, *tile);
+                }
                 ButterflyBehavior::FlowerBed => {
-                    flower_bed_behavior(&mut commands, &mut random.rng, &world, flowers, roam, id);
+                    flower_bed_behavior(&mut commands, &world, flowers, roam, flower_bed_id, id);
                 }
             }
         }
     }
+}
+
+fn swirling_behavior(
+    commands: &mut Commands,
+    rng: &mut SmallRng,
+    roam: &AnimalRoam,
+    id: Entity,
+    tile: TilePos,
+) {
+    let point = tile.to_world_transform();
+    let path = SwirlingPath::random(rng, point.translation);
+
+    commands
+        .entity(id)
+        .insert(path)
+        .insert(Swirling)
+        .insert(AnimalState::Fly);
 }
 
 fn free_fly_behavior(commands: &mut Commands, roam: &AnimalRoam, id: Entity) {
@@ -74,31 +97,29 @@ fn free_fly_behavior(commands: &mut Commands, roam: &AnimalRoam, id: Entity) {
     commands
         .entity(id)
         .insert(FreeFly(range))
-        .insert(NaturalFlyPath::default())
-        .insert(AnimalState::Fly);
+        .insert(AnimalState::Idle);
 }
 
 fn flower_bed_behavior(
     commands: &mut Commands,
-    rng: &mut SmallRng,
     world: &TileWorld,
     flowers: Query<(), With<Flower>>,
     roam: &AnimalRoam,
+    flower_id: u8,
     id: Entity,
 ) {
-    let flower_bed_id = rng.random_range(0..u8::MAX);
     let range: Vec<_> = range_from_surfaces(&roam.surface).collect();
 
     let entitys = world.all_entitys_from_range(&range);
 
     for entity in entitys {
         if flowers.get(entity).is_ok() {
-            commands.entity(entity).insert(FlowerBed(flower_bed_id));
+            commands.entity(entity).insert(FlowerBed(flower_id));
         }
     }
 
     commands
         .entity(id)
-        .insert(FlowerBed(flower_bed_id))
+        .insert(FlowerBed(flower_id))
         .insert(AnimalState::Idle);
 }

@@ -52,7 +52,7 @@ pub fn flat(v: Vec3) -> Vec2 {
 }
 
 #[inline]
-pub fn normalized_sin(v: f32) -> f32 {
+pub fn abs_sin(v: f32) -> f32 {
     (v.sin() + 1.0) * 0.5
 }
 

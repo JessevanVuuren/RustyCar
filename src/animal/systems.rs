@@ -1,6 +1,6 @@
 use crate::animal::{
+    behaviors::NaturalFlyPath,
     components::{AnimalAnimations, AnimalState, RestTimer},
-    natural_fly_path::NaturalFlyPath,
 };
 use bevy::prelude::*;
 use std::time::Duration;

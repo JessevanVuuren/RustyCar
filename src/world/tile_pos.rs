@@ -1,5 +1,7 @@
 use std::{
-    collections::{HashMap, HashSet}, f32::consts::FRAC_PI_2, ops::{Add, Sub}
+    collections::{HashMap, HashSet},
+    f32::consts::FRAC_PI_2,
+    ops::{Add, Sub},
 };
 
 use bevy::prelude::*;
@@ -12,9 +14,11 @@ pub struct TilePos {
     pub x: i32,
     pub z: i32,
 }
-
 impl TilePos {
-    pub fn new(x: i32, z: i32) -> Self {
+    pub const ZERO: Self = Self::new(0, 0);
+    pub const ONE: Self = Self::new(1, 1);
+
+    pub const fn new(x: i32, z: i32) -> Self {
         Self { x, z }
     }
 
@@ -22,6 +26,14 @@ impl TilePos {
         return Transform::from_xyz(
             (self.x as f32 * TILE_SIZE) as f32,
             0.0,
+            (self.z as f32 * TILE_SIZE) as f32,
+        );
+    }
+
+    pub fn to_world_transform_y(self, y: f32) -> Transform {
+        return Transform::from_xyz(
+            (self.x as f32 * TILE_SIZE) as f32,
+            y,
             (self.z as f32 * TILE_SIZE) as f32,
         );
     }
