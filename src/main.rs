@@ -1,6 +1,7 @@
 #![allow(unused)]
 mod animal;
 mod car;
+mod collision;
 mod config;
 mod extra;
 mod world;
@@ -18,7 +19,11 @@ use rand::{SeedableRng, rngs::SmallRng};
 use crate::{
     animal::AnimalPlugin,
     car::components::Car,
-    config::world_config::{grass_with_patches, large_grass_test, lots_of_patches, multiple_surface, test_world},
+    collision::ColliderPlugin,
+    config::world_config::{
+        collision_world_test, grass_with_patches, large_grass_test, lots_of_patches,
+        multiple_surface, test_world,
+    },
     world::{WorldPlugin, components::TileWorld},
 };
 
@@ -37,14 +42,15 @@ const SEED: u64 = 1604;
 
 fn main() {
     // let static_world = multiple_surface();
-    
-    let static_world = test_world();
-    
+
+    // let static_world = test_world();
+    let static_world = collision_world_test();
+
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
 
     // let static_world = grass_with_patches();
-    
+
     // let static_world = multiple_surface();
 
     App::new()
@@ -64,23 +70,26 @@ fn main() {
             },
         ))
         .add_systems(Startup, init_rng)
-        // .add_plugins(CarPlugin)
+        .add_plugins(CarPlugin)
         .add_plugins(WorldPlugin {
             static_world: static_world.clone(),
         })
         .add_plugins(AnimalPlugin {
             static_world: static_world.clone(),
         })
+        .add_plugins(ColliderPlugin {
+            static_world: static_world.clone(),
+        })
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_camera)
         .add_systems(Update, xyz_gismos)
-        // .add_systems(Startup, setup_car)
+        .add_systems(Startup, setup_car)
         .add_systems(FixedUpdate, camera_follow)
         .run();
 }
 
 fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let position = Transform::from_xyz(60.0, 0.0, 60.0);
+    let position = Transform::from_xyz(8.0, 0.0, 8.0);
     spawn_car(&mut commands, &asset_server, position);
 }
 
@@ -99,8 +108,8 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
     // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(6.0, 0.0, 6.0);
-    let offset = Transform::from_xyz(23.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(14.0, 0.0, 6.0);
+    let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(15.0, 0.0, 15.0);
     // let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(60.0, 0.0, 60.0);

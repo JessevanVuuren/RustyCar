@@ -1,7 +1,16 @@
+use crate::collision::{
+    components::{ModelCollider, Shape},
+    utils::add_collider,
+};
+
 use super::components::*;
 use bevy::prelude::*;
 
-pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, position: Transform) -> Entity {
+pub fn spawn_car(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    position: Transform,
+) -> Entity {
     let car = commands
         .spawn((
             Car {
@@ -10,7 +19,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
                 target: 0.0,
                 velocity: 0.0,
             },
-            position
+            position,
         ))
         .id();
 
@@ -22,9 +31,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
                 last_speed: 0.0,
             },
             Transform::IDENTITY,
-            SceneRoot(
-                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/car.glb")),
-            ),
+            SceneRoot(asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/car.glb"))),
         ));
     });
 
@@ -48,8 +55,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
             },
             offset,
             SceneRoot(
-                asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -74,8 +80,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
             },
             offset,
             SceneRoot(
-                asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -101,8 +106,7 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
             },
             offset,
             SceneRoot(
-                asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
@@ -128,11 +132,19 @@ pub fn spawn_car(commands: &mut Commands, asset_server: &Res<AssetServer>, posit
             },
             offset,
             SceneRoot(
-                asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
+                asset_server.load(GltfAssetLabel::Scene(0).from_asset("models/car/wheel.glb")),
             ),
         ));
     });
+
+    let collider = ModelCollider {
+        position: Vec3::new(0.0, 2.0680195, -0.15),
+        rotation: Vec3::new(0.0, 0.0, 0.0),
+        shape: Shape::Box(Vec3::new(3.926, 2.7388, 7.4441)),
+        ..default()
+    };
+
+    add_collider(commands, car, collider);
 
     car
 }

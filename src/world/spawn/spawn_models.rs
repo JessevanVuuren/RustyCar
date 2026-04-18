@@ -1,10 +1,10 @@
-use crate::world::{
+use crate::{collision::utils::add_collider, world::{
     components::{StaticWorld, TileType, TileWorld},
     utils::{
         add_component_to_entity, apply_transformations, model_path, range_from_surfaces,
         spawn_object, tiles_range_from_placement,
     },
-};
+}};
 use bevy::prelude::*;
 use rand::{SeedableRng, rngs::SmallRng};
 
@@ -30,6 +30,10 @@ pub fn spawn_models(
 
                     let id = spawn_object(&transform, &path, &mut commands, &assets);
                     add_component_to_entity(&mut commands, &object.comp, id);
+
+                    if let Some(collider) = &object.collider {
+                        add_collider(&mut commands, id, collider.clone());
+                    }
 
                     world.models.entry(tile).or_default().push(id)
                 }

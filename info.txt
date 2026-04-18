@@ -1,1 +1,23 @@
 https://github.com/guilhermec-costa/code-telescope
+https://github.com/dimforge/bevy_rapier
+
+Workspace Files	        Alt+M F
+Workspace Text Search   Alt+M G
+Current File Text	    Alt+M /
+Recent Files	        Alt+M R
+Workspace Symbols	    Alt+M S
+Document Symbols	    Alt+M .
+Git Branches	        Alt+M B
+Git Commits	            Alt+M C
+Diagnostics	            Alt+M D
+Call Hierarchy	        Alt+M H
+LSP References	        Alt+M N
+Keybindings	            Alt+M K
+Color Schemes	        Alt+M T
+Tasks	                Alt+M X
+Breakpoints	            Alt+M P
+Extensions	            Alt+M E
+Package Docs	        Alt+M V
+Font Family	            Alt+M ,
+Harpoon Marks	        Alt+M M
+Custom Finders	        Alt+M U

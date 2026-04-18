@@ -9,6 +9,7 @@ use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
     animal::components::{AnimalKind, AnimalModel},
+    collision::components::ModelCollider,
     extra::components::{Noise, Range, Value},
     world::tile_pos::TilePos,
 };
@@ -49,6 +50,7 @@ pub struct Surface {
 
 #[derive(Clone, Debug, Default)]
 pub struct WorldModel {
+    pub collider: Option<ModelCollider>,
     pub placement: Placement,
     pub path: String,
     pub range: Range<i32>,
