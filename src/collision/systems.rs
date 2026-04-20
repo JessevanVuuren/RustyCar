@@ -1,31 +1,77 @@
 use bevy::{
-    color::palettes::css::{GREEN, RED},
+    color::palettes::css::{BLUE, GREEN, RED, YELLOW},
     prelude::*,
-    transform,
 };
 
 use crate::{
-    collision::components::{Collider, ModelCollider, Shape},
+    collision::{
+        components::{Collider, ModelCollider, Shape},
+        utils::{
+            collider, debug_corner, debug_corners, debug_xyz_normals, min_max_vectors,
+            points_along_projection, separating_axis_theorem,
+        },
+    },
     world::components::StaticWorld,
 };
 
 pub fn collider_debug(
-    mut commands: Commands,
     query: Query<(Entity, &Transform, &Shape, &ChildOf), With<Collider>>,
     collider_query: Query<&Transform>,
     mut gizmos: Gizmos,
 ) {
-    for (entity, collider_transform, shape, child_of) in query {
+    for (entity, child, shape, child_of) in query {
         match shape {
             Shape::Sphere(_) => (),
             Shape::Box(size) => {
-                if let Ok(parent_transform) = collider_query.get(child_of.parent()) {
-                    let mut transform = parent_transform.mul_transform(*collider_transform);
-                    transform.scale = *size;
-                    gizmos.cube(transform, RED);
+                if let Ok(parent) = collider_query.get(child_of.parent()) {
+                    let collider = collider(parent, child, *size);
+
+                    gizmos.cube(collider, RED);
+                    debug_corners(&mut gizmos, &collider, 0.1, YELLOW);
+
+                    let unit = Vec3::new(1.0, 0.0, 0.0);
+                    let points = points_along_projection(&collider, unit);
+                    let (min, max) = min_max_vectors(&points);
+
+                    debug_corner(&mut gizmos, min, 0.1, YELLOW);
+                    debug_corner(&mut gizmos, max, 0.1, YELLOW);
+
+                    debug_xyz_normals(&mut gizmos, &collider);
                 }
             }
             Shape::None => (),
         }
     }
+}
+
+pub fn collider_collision_check(
+    collider_query: Query<&Transform>,
+    query: Query<(Entity, &Transform, &Shape, &ChildOf), With<Collider>>,
+) {
+    let mut colliders = Vec::new();
+
+    for (entity, child, shape, child_of) in query {
+        match shape {
+            Shape::Sphere(_) => (),
+            Shape::Box(size) => {
+                if let Ok(parent) = collider_query.get(child_of.parent()) {
+                    colliders.push(collider(parent, child, *size));
+                }
+            }
+            Shape::None => (),
+        }
+    }
+
+    let amount = colliders.len();
+    for index_a in 0..amount {
+        for index_b in (index_a + 1)..amount {
+            let collider_a = colliders[index_a];
+            let collider_b = colliders[index_b];
+
+            let result = separating_axis_theorem(&collider_a, &collider_b);
+
+            println!("collide: {}", result);
+        }
+    }
+    // println!("colliders: {}", colliders.len());
 }

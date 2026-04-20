@@ -100,9 +100,9 @@ fn init_rng(mut commands: Commands) {
 }
 
 fn xyz_gismos(mut gizmos: Gizmos) {
-    gizmos.line(Vec3::ZERO, Vec3::new(4.0, 0.0, 0.0), RED);
-    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 0.0, 4.0), BLUE);
-    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 4.0, 0.0), GREEN);
+    gizmos.line(Vec3::ZERO, Vec3::new(4.0, 0.0, 0.0), RED);   // x
+    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 0.0, 4.0), BLUE);  // z
+    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 4.0, 0.0), GREEN); // y
 }
 
 fn setup_camera(mut commands: Commands) {

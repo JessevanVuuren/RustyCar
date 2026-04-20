@@ -1,5 +1,8 @@
 use crate::{
-    collision::{spawn::spawn_colliders, systems::collider_debug},
+    collision::{
+        spawn::spawn_colliders,
+        systems::{collider_collision_check, collider_debug},
+    },
     world::components::StaticWorld,
 };
 use bevy::prelude::*;
@@ -17,5 +20,6 @@ impl Plugin for ColliderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_colliders);
         app.add_systems(Update, collider_debug);
+        app.add_systems(Update, collider_collision_check);
     }
 }

@@ -1,6 +1,12 @@
 https://github.com/guilhermec-costa/code-telescope
 https://github.com/dimforge/bevy_rapier
 
+# Collision
+https://research.ncl.ac.uk/game/mastersdegree/gametechnologies/previousinformation/physics4collisiondetection/2017%20Tutorial%204%20-%20Collision%20Detection.pdf
+https://dev.to/pratyush_mohanty_6b8f2749/the-math-behind-bounding-box-collision-detection-aabb-vs-obbseparate-axis-theorem-1gdn
+https://www.desmos.com/calculator/uvdzec3glp
+
+
 Workspace Files	        Alt+M F
 Workspace Text Search   Alt+M G
 Current File Text	    Alt+M /

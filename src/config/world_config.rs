@@ -103,7 +103,9 @@ pub fn collision_world_test() -> StaticWorld {
                     ..default()
                 }]),
                 surface: Surface {
-                    positive: vec![Range::Range(TilePos::new(4, 1), TilePos::new(4, 3))],
+                    // positive: vec![Range::Range(TilePos::new(4, 1), TilePos::new(4, 3))],
+                    // positive: vec![Range::Range(TilePos::new(4, 1), TilePos::new(4, 2))],
+                    positive: vec![Range::One(TilePos::new(4, 2))],
                     ..default()
                 },
             },
