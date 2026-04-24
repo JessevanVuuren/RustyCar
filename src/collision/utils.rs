@@ -20,7 +20,7 @@ pub fn add_collider(commands: &mut Commands, id: Entity, collider: ModelCollider
 
 pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -> bool {
     let (x_norm_a, y_norm_a, z_norm_a) = collider_normals(collider_a);
-    let (x_norm_b, y_norm_b, z_norm_b) = collider_normals(collider_b);
+    // let (x_norm_b, y_norm_b, z_norm_b) = collider_normals(collider_b);
 
     let points_a = points_along_projection(&collider_a, x_norm_a);
     let points_b = points_along_projection(&collider_b, x_norm_a);
@@ -28,17 +28,22 @@ pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -
     let (min_a, max_a) = min_max_vectors(&points_a);
     let (min_b, max_b) = min_max_vectors(&points_b);
 
-    lines_overlap(min_a, max_a, min_b, max_b)
+    lines_overlap(min_a, max_a, min_b, max_b, x_norm_a)
 }
 
-pub fn lines_overlap(start_a: Vec3, stop_a: Vec3, start_b: Vec3, stop_b: Vec3) -> bool {
-    let a_min = start_a.x.min(stop_a.x);
-    let a_max = start_a.x.max(stop_a.x);
+pub fn lines_overlap(start_a: Vec3, stop_a: Vec3, start_b: Vec3, stop_b: Vec3, unit: Vec3) -> bool {
+    let start_a = start_a.dot(unit);
+    let stop_a = stop_a.dot(unit);
+    let start_b = start_b.dot(unit);
+    let stop_b = stop_b.dot(unit);
 
-    let b_min = start_b.x.min(stop_b.x);
-    let b_max = start_b.x.max(stop_b.x);
+    let min_a = start_a.min(stop_a);
+    let max_a = start_a.max(stop_a);
 
-    a_max >= b_min && b_max >= a_min
+    let min_b = start_b.min(stop_b);
+    let max_b = start_b.max(stop_b);
+
+    min_a <= max_b && min_b <= max_a
 }
 
 pub fn points_along_projection(transform: &Transform, vector: Vec3) -> Vec<Vec3> {
