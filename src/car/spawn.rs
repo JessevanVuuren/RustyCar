@@ -1,3 +1,5 @@
+use std::f32::consts::FRAC_PI_4;
+
 use crate::collision::{
     components::{ModelCollider, Shape},
     utils::add_collider,
@@ -139,7 +141,7 @@ pub fn spawn_car(
 
     let collider = ModelCollider {
         position: Vec3::new(0.0, 2.0680195, -0.15),
-        rotation: Vec3::new(0.0, 0.0, 0.0),
+        rotation: Vec3::new(0.0, 0.0, FRAC_PI_4),
         shape: Shape::Box(Vec3::new(3.926, 2.7388, 7.4441)),
         ..default()
     };

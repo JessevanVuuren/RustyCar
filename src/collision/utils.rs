@@ -19,41 +19,66 @@ pub fn add_collider(commands: &mut Commands, id: Entity, collider: ModelCollider
 }
 
 pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -> bool {
-    let (x_norm_a, y_norm_a, z_norm_a) = collider_normals(collider_a);
-    // let (x_norm_b, y_norm_b, z_norm_b) = collider_normals(collider_b);
+    let normals_a = collider_normals(collider_a);
+    let normals_b = collider_normals(collider_b);
+    let crosses = cross_of_normals(&normals_a, &normals_b);
 
-    let points_a = points_along_projection(&collider_a, x_norm_a);
-    let points_b = points_along_projection(&collider_b, x_norm_a);
+    let mut axes = Vec::with_capacity(15);
+    axes.extend(normals_a);
+    axes.extend(normals_b);
+    axes.extend(crosses);
 
-    let (min_a, max_a) = min_max_vectors(&points_a);
-    let (min_b, max_b) = min_max_vectors(&points_b);
+    let points_a = transform_shape(collider_a);
+    let points_b = transform_shape(collider_b);
 
-    lines_overlap(min_a, max_a, min_b, max_b, x_norm_a)
+    for axis in axes {
+        let axis = axis.normalize();
+
+        let (min_a, max_a) = project_points(&points_a, axis);
+        let (min_b, max_b) = project_points(&points_b, axis);
+
+        if !overlap(min_a, max_a, min_b, max_b) {
+            return false;
+        }
+    }
+
+    true
 }
 
-pub fn lines_overlap(start_a: Vec3, stop_a: Vec3, start_b: Vec3, stop_b: Vec3, unit: Vec3) -> bool {
-    let start_a = start_a.dot(unit);
-    let stop_a = stop_a.dot(unit);
-    let start_b = start_b.dot(unit);
-    let stop_b = stop_b.dot(unit);
+pub fn cross_of_normals(normals_a: &[Vec3], normals_b: &[Vec3]) -> Vec<Vec3> {
+    let len_a = normals_a.len();
+    let len_b = normals_b.len();
 
-    let min_a = start_a.min(stop_a);
-    let max_a = start_a.max(stop_a);
+    let mut crosses = Vec::with_capacity(len_a * len_b);
 
-    let min_b = start_b.min(stop_b);
-    let max_b = start_b.max(stop_b);
+    for i in 0..normals_a.len() {
+        for j in 0..normals_b.len() {
+            let axis = normals_a[i].cross(normals_b[j]);
+            if axis.length_squared() > 1e-6 {
+                crosses.push(axis.normalize());
+            }
+        }
+    }
 
+    crosses
+}
+
+pub fn project_points(points: &[Vec3], axis: Vec3) -> (f32, f32) {
+    let mut min = points[0].dot(axis);
+    let mut max = min;
+
+    for p in points.iter().skip(1) {
+        let d = p.dot(axis);
+        min = min.min(d);
+        max = max.max(d);
+    }
+
+    (min, max)
+}
+
+pub fn overlap(min_a: f32, max_a: f32, min_b: f32, max_b: f32) -> bool {
     min_a <= max_b && min_b <= max_a
 }
-
-pub fn points_along_projection(transform: &Transform, vector: Vec3) -> Vec<Vec3> {
-    let points = transform_shape(transform);
-    points
-        .iter()
-        .map(|point| point.dot(vector) * vector)
-        .collect()
-}
-
 pub fn min_max_vectors(vectors: &Vec<Vec3>) -> (Vec3, Vec3) {
     let mut low = vectors[0];
     let mut max = vectors[0];
@@ -73,12 +98,18 @@ pub fn min_max_vectors(vectors: &Vec<Vec3>) -> (Vec3, Vec3) {
     (low, max)
 }
 
-pub fn collider_normals(transform: &Transform) -> (Vec3, Vec3, Vec3) {
-    (
+pub fn collider_normals(transform: &Transform) -> Vec<Vec3> {
+    vec![
         transform.right().as_vec3(),
         transform.up().as_vec3(),
         transform.forward().as_vec3(),
-    )
+    ]
+}
+
+pub fn collider(a: &Transform, b: &Transform, size: Vec3) -> Transform {
+    let mut transform = a.mul_transform(*b);
+    transform.scale = size;
+    transform
 }
 
 pub fn transform_shape(transform: &Transform) -> [Vec3; 8] {
@@ -115,19 +146,13 @@ pub fn debug_xyz_normals(gizmos: &mut Gizmos, transform: &Transform) {
     let center = transform.translation;
     let half = transform.scale / 2.0;
 
-    let (right, upward, forward) = collider_normals(transform);
+    let normals = collider_normals(transform);
 
-    let right_end = right * (half.x + 1.0);
-    let upward_end = upward * (half.y + 1.0);
-    let forward_end = forward * (half.z + 1.0);
+    let right_end = normals[0] * (half.x + 1.0);
+    let upward_end = normals[1] * (half.y + 1.0);
+    let forward_end = normals[2] * (half.z + 1.0);
 
-    gizmos.line(right * half.x + center, right_end + center, RED);
-    gizmos.line(upward * half.y + center, upward_end + center, GREEN);
-    gizmos.line(forward * half.z + center, forward_end + center, BLUE);
-}
-
-pub fn collider(a: &Transform, b: &Transform, size: Vec3) -> Transform {
-    let mut transform = a.mul_transform(*b);
-    transform.scale = size;
-    transform
+    gizmos.line(normals[0] * half.x + center, right_end + center, RED);
+    gizmos.line(normals[1] * half.y + center, upward_end + center, GREEN);
+    gizmos.line(normals[2] * half.z + center, forward_end + center, BLUE);
 }
