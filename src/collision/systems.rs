@@ -7,7 +7,7 @@ use crate::{
     collision::{
         components::{Collider, Collision, Effect, ModelCollider, Shape},
         theorem::separating_axis_theorem,
-        utils::{build_colliders, collider},
+        utils::build_colliders,
     },
     world::components::StaticWorld,
 };
@@ -38,18 +38,21 @@ pub fn collider_collision(
             let (entity_a, collider_a, effect_a) = &colliders[index_a];
             let (entity_b, collider_b, effect_b) = &colliders[index_b];
 
-            let collision = separating_axis_theorem(&collider_a, &collider_b);
-
-            if collision {
+            if let Some((normal, depth)) = separating_axis_theorem(&collider_a, &collider_b) {
+                let direction = (collider_a.translation - collider_b.translation).normalize();
                 let collision_a = Collision {
-                    entity_a: *entity_a,
-                    entity_b: *entity_b,
+                    depth,
+                    normal,
+                    direction,
+                    other: *entity_b,
                     effect: effect_a.clone(),
                 };
 
                 let collision_b = Collision {
-                    entity_a: *entity_a,
-                    entity_b: *entity_b,
+                    depth,
+                    normal,
+                    direction,
+                    other: *entity_a,
                     effect: effect_b.clone(),
                 };
 

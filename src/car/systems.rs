@@ -1,3 +1,5 @@
+use std::process::Child;
+
 use bevy::{ecs::relationship::Relationship, prelude::*};
 
 use crate::{
@@ -8,7 +10,7 @@ use crate::{
             ROLL_MAX, ROLL_SPEED, SPEED_DAMP, STEER_ANGLE, STEER_DAMP,
         },
     },
-    collision::components::Collision,
+    collision::components::{Collider, Collision, Shape},
 };
 
 pub fn car_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Car>) {
@@ -61,16 +63,31 @@ pub fn car_tilt(
     }
 }
 
-pub fn car_physics(time: Res<Time>, mut query: Query<(&mut Transform, &mut Car)>) {
+pub fn car_physics(
+    time: Res<Time>,
+    mut gizmos: Gizmos,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Transform, &mut Car, Option<&Collision>)>,
+) {
     let dt = time.delta_secs();
-
-    for (mut transform, mut car) in query.iter_mut() {
+    for (entity, mut transform, mut car, collision) in query.iter_mut() {
         let actual_forward = Vec3::new(f32::cos(car.actual), 0.0, f32::sin(car.actual));
         let offset_forward = actual_forward + transform.translation;
 
         let direction = offset_forward - transform.translation;
-        transform.translation += direction * car.velocity * dt;
 
+        if let Some(collision) = collision {
+            let mut corrected = collision.direction;
+            corrected.y = 0.0;
+
+            transform.translation -= corrected * collision.depth;
+
+            car.velocity = collision.depth;
+
+            commands.entity(entity).remove::<Collision>();
+        } else {
+            transform.translation += direction * car.velocity * dt;
+        }
         transform.rotation = Quat::from_rotation_y(-car.actual + 1.5707963268);
 
         let diff = car.target - car.actual;
@@ -108,11 +125,5 @@ pub fn wheel_steering(
         } else {
             transform.rotation = Quat::from_rotation_x(wheel.spin) * wheel.offset.rotation;
         }
-    }
-}
-
-pub fn car_collision(query: Query<(Entity, &mut Car, &Collision)>, mut commands: Commands) {
-    for (entity, mut car, collision) in query {
-        println!("BANG!");
     }
 }

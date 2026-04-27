@@ -14,6 +14,6 @@ impl Plugin for CarPlugin {
             FixedUpdate,
             (car_input, car_physics, wheel_steering, car_tilt).chain(),
         );
-        app.add_systems(Update, car_collision);
+        // app.add_systems(Update, car_collision);
     }
 }

@@ -93,7 +93,7 @@ pub fn collision_world_test() -> StaticWorld {
                     path: "infra/fence".into(),
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
-                        shape: Shape::Box(Vec3::new(3.0, 3.0, 1.0)),
+                        shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         ..default()
                     }),
                     placement: Placement {
@@ -1546,8 +1546,14 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
+                        ..default()
+                    }),
                     ..default()
                 }]),
+
                 surface: Surface {
                     positive: vec![Range::Range(
                         TilePos::new(play_start.x + 1, play_start.z),
@@ -1561,6 +1567,11 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
+                        ..default()
+                    }),
                     ..default()
                 }]),
                 surface: Surface {
@@ -1576,6 +1587,11 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
+                        ..default()
+                    }),
                     placement: Placement {
                         rotation: Rotation::Amount(UP, Dir3::Y),
                         ..default()
@@ -1595,6 +1611,11 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
+                        ..default()
+                    }),
                     placement: Placement {
                         rotation: Rotation::Amount(LEFT, Dir3::Y),
                         ..default()
@@ -1614,6 +1635,11 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
+                        ..default()
+                    }),
                     placement: Placement {
                         rotation: Rotation::Amount(DOWN, Dir3::Y),
                         ..default()
@@ -1630,6 +1656,11 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
+                        ..default()
+                    }),
                     placement: Placement {
                         rotation: Rotation::Amount(RIGHT, Dir3::Y),
                         ..default()
@@ -1650,6 +1681,11 @@ pub fn test_world() -> StaticWorld {
                         rotation: Rotation::Amount(UP, Dir3::Y),
                         ..default()
                     },
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
+                        ..default()
+                    }),
                     ..default()
                 }]),
                 surface: Surface {
@@ -1666,6 +1702,11 @@ pub fn test_world() -> StaticWorld {
                         rotation: Rotation::Amount(LEFT, Dir3::Y),
                         ..default()
                     },
+                    collider: Some(ModelCollider {
+                        position: Vec3::new(0.0, 1.5, 0.0),
+                        shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
+                        ..default()
+                    }),
                     ..default()
                 }]),
                 surface: Surface {

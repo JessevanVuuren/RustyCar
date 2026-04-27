@@ -43,8 +43,8 @@ const SEED: u64 = 1604;
 fn main() {
     // let static_world = multiple_surface();
 
-    // let static_world = test_world();
-    let static_world = collision_world_test();
+    let static_world = test_world();
+    // let static_world = collision_world_test();
 
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
@@ -89,7 +89,7 @@ fn main() {
 }
 
 fn setup_car(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let position = Transform::from_xyz(8.0, 0.0, 8.0);
+    let position = Transform::from_xyz(50.0, 0.0, 50.0);
     spawn_car(&mut commands, &asset_server, position);
 }
 
@@ -100,20 +100,20 @@ fn init_rng(mut commands: Commands) {
 }
 
 fn xyz_gismos(mut gizmos: Gizmos) {
-    gizmos.line(Vec3::ZERO, Vec3::new(4.0, 0.0, 0.0), RED);   // x
-    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 0.0, 4.0), BLUE);  // z
+    gizmos.line(Vec3::ZERO, Vec3::new(4.0, 0.0, 0.0), RED); // x
+    gizmos.line(Vec3::ZERO, Vec3::new(0.0, 0.0, 4.0), BLUE); // z
     gizmos.line(Vec3::ZERO, Vec3::new(0.0, 4.0, 0.0), GREEN); // y
 }
 
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
     // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(14.0, 0.0, 6.0);
-    let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
+    // let focus = Vec3::new(14.0, 0.0, 6.0);
+    // let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(15.0, 0.0, 15.0);
     // let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
-    // let focus = Vec3::new(60.0, 0.0, 60.0);
-    // let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(60.0, 0.0, 60.0);
+    let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
 
     commands.spawn((
         DirectionalLight {

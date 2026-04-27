@@ -3,7 +3,7 @@ use bevy::{
     prelude::*,
 };
 
-pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -> bool {
+pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -> Option<(Vec3, f32)> {
     let normals_a = collider_normals(collider_a);
     let normals_b = collider_normals(collider_b);
     let crosses = cross_of_normals(&normals_a, &normals_b);
@@ -16,18 +16,28 @@ pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -
     let points_a = transform_shape(collider_a);
     let points_b = transform_shape(collider_b);
 
+    let mut smallest = f32::MAX;
+    let mut best_axis = Vec3::ZERO;
+
     for axis in axes {
         let axis = axis.normalize();
 
         let (min_a, max_a) = project_points(&points_a, axis);
         let (min_b, max_b) = project_points(&points_b, axis);
 
-        if !overlap(min_a, max_a, min_b, max_b) {
-            return false;
+        let overlap = overlap_depth(min_a, max_a, min_b, max_b);
+
+        if overlap <= 0.0 {
+            return None;
+        }
+
+        if overlap < smallest {
+            smallest = overlap;
+            best_axis = axis;
         }
     }
 
-    true
+    Some((best_axis, smallest))
 }
 
 pub fn cross_of_normals(normals_a: &[Vec3], normals_b: &[Vec3]) -> Vec<Vec3> {
@@ -61,9 +71,10 @@ pub fn project_points(points: &[Vec3], axis: Vec3) -> (f32, f32) {
     (min, max)
 }
 
-pub fn overlap(min_a: f32, max_a: f32, min_b: f32, max_b: f32) -> bool {
-    min_a <= max_b && min_b <= max_a
+pub fn overlap_depth(min_a: f32, max_a: f32, min_b: f32, max_b: f32) -> f32 {
+    f32::min(max_a, max_b) - f32::max(min_a, min_b)
 }
+
 pub fn min_max_vectors(vectors: &Vec<Vec3>) -> (Vec3, Vec3) {
     let mut low = vectors[0];
     let mut max = vectors[0];

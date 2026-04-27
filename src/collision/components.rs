@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use bevy::{color::palettes::css::GREEN, prelude::*};
+
+use crate::{car::components::Car, collision::utils::build_collider};
 
 #[derive(Debug, Default, Clone)]
 pub struct ModelCollider {
@@ -22,9 +24,11 @@ pub struct Collider;
 
 #[derive(Component)]
 pub struct Collision {
-    pub entity_a: Entity,
-    pub entity_b: Entity,
+    pub depth: f32,
+    pub normal: Vec3,
+    pub other: Entity,
     pub effect: Effect,
+    pub direction: Vec3,
 }
 
 #[derive(Component, Debug, Default, Clone)]
