@@ -1,4 +1,5 @@
 pub mod components;
+pub mod globals;
 pub mod spawn;
 pub mod systems;
 
@@ -13,5 +14,6 @@ impl Plugin for CarPlugin {
             FixedUpdate,
             (car_input, car_physics, wheel_steering, car_tilt).chain(),
         );
+        app.add_systems(Update, car_collision);
     }
 }

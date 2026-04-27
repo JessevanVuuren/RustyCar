@@ -1,7 +1,7 @@
 use crate::{
     collision::{
         spawn::spawn_colliders,
-        systems::{collider_collision_check, collider_debug},
+        systems::{collider_collision, collider_debug},
     },
     world::components::StaticWorld,
 };
@@ -10,6 +10,7 @@ use bevy::prelude::*;
 pub mod components;
 pub mod spawn;
 pub mod systems;
+pub mod theorem;
 pub mod utils;
 
 pub struct ColliderPlugin {
@@ -20,6 +21,6 @@ impl Plugin for ColliderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, spawn_colliders);
         app.add_systems(Update, collider_debug);
-        app.add_systems(Update, collider_collision_check);
+        app.add_systems(Update, collider_collision);
     }
 }

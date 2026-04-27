@@ -5,63 +5,57 @@ use bevy::{
 
 use crate::{
     collision::{
-        components::{Collider, ModelCollider, Shape},
-        utils::{
-            collider, collider_normals, debug_corner, debug_corners, debug_xyz_normals,
-            min_max_vectors, separating_axis_theorem,
-        },
+        components::{Collider, Collision, Effect, ModelCollider, Shape},
+        theorem::separating_axis_theorem,
+        utils::{build_colliders, collider},
     },
     world::components::StaticWorld,
 };
 
 pub fn collider_debug(
-    query: Query<(Entity, &Transform, &Shape, &ChildOf), With<Collider>>,
-    collider_query: Query<&Transform>,
     mut gizmos: Gizmos,
+    collider_query: Query<(Entity, &Transform)>,
+    query: Query<(&Transform, &Shape, &ChildOf, &Effect), With<Collider>>,
 ) {
-    for (entity, child, shape, child_of) in query {
-        match shape {
-            Shape::Sphere(_) => (),
-            Shape::Box(size) => {
-                if let Ok(parent) = collider_query.get(child_of.parent()) {
-                    let collider = collider(parent, child, *size);
+    let colliders = build_colliders(collider_query, query);
 
-                    gizmos.cube(collider, RED);
-                }
-            }
-            Shape::None => (),
-        }
+    for (_, collider, _) in colliders {
+        gizmos.cube(collider, RED);
     }
 }
 
-pub fn collider_collision_check(
+pub fn collider_collision(
     mut gizmos: Gizmos,
-    collider_query: Query<&Transform>,
-    query: Query<(Entity, &Transform, &Shape, &ChildOf), With<Collider>>,
+    mut commands: Commands,
+    collider_query: Query<(Entity, &Transform)>,
+    query: Query<(&Transform, &Shape, &ChildOf, &Effect), With<Collider>>,
 ) {
-    let mut colliders = Vec::new();
-
-    for (entity, child, shape, child_of) in query {
-        match shape {
-            Shape::Sphere(_) => (),
-            Shape::Box(size) => {
-                if let Ok(parent) = collider_query.get(child_of.parent()) {
-                    colliders.push(collider(parent, child, *size));
-                }
-            }
-            Shape::None => (),
-        }
-    }
+    let colliders = build_colliders(collider_query, query);
 
     let amount = colliders.len();
     for index_a in 0..amount {
         for index_b in (index_a + 1)..amount {
-            let collider_a = colliders[index_a];
-            let collider_b = colliders[index_b];
+            let (entity_a, collider_a, effect_a) = &colliders[index_a];
+            let (entity_b, collider_b, effect_b) = &colliders[index_b];
 
-            let result = separating_axis_theorem(&collider_a, &collider_b);
+            let collision = separating_axis_theorem(&collider_a, &collider_b);
 
-            println!("Collide: {:#?}", result);
+            if collision {
+                let collision_a = Collision {
+                    entity_a: *entity_a,
+                    entity_b: *entity_b,
+                    effect: effect_a.clone(),
+                };
+
+                let collision_b = Collision {
+                    entity_a: *entity_a,
+                    entity_b: *entity_b,
+                    effect: effect_b.clone(),
+                };
+
+                commands.entity(*entity_a).insert(collision_a);
+                commands.entity(*entity_b).insert(collision_b);
+            }
         }
     }
 }

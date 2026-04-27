@@ -1,22 +1,15 @@
 use bevy::{ecs::relationship::Relationship, prelude::*};
 
-use crate::car::components::{Car, CarVisual, Wheel, WheelPosition};
-
-const DRIVE_SPEED: f32 = 1.0;
-
-const MAX_SPEED_FORWARD: f32 = 50.0;
-const MAX_SPEED_BACKWARD: f32 = 10.0;
-
-const SPEED_DAMP: f32 = 0.99;
-const STEER_DAMP: f32 = 0.14;
-const STEER_ANGLE: f32 = 0.5;
-
-const PITCH_GROW: f32 = 1.0;
-const PITCH_DECAY: f32 = 0.6;
-const PITCH_MAX: f32 = 0.15;
-
-const ROLL_MAX: f32 = 0.15;
-const ROLL_SPEED: f32 = 3.0;
+use crate::{
+    car::{
+        components::{Car, CarVisual, Wheel, WheelPosition},
+        globals::{
+            DRIVE_SPEED, MAX_SPEED_BACKWARD, MAX_SPEED_FORWARD, PITCH_DECAY, PITCH_GROW, PITCH_MAX,
+            ROLL_MAX, ROLL_SPEED, SPEED_DAMP, STEER_ANGLE, STEER_DAMP,
+        },
+    },
+    collision::components::Collision,
+};
 
 pub fn car_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Car>) {
     for mut car in query.iter_mut() {
@@ -115,5 +108,11 @@ pub fn wheel_steering(
         } else {
             transform.rotation = Quat::from_rotation_x(wheel.spin) * wheel.offset.rotation;
         }
+    }
+}
+
+pub fn car_collision(query: Query<(Entity, &mut Car, &Collision)>, mut commands: Commands) {
+    for (entity, mut car, collision) in query {
+        println!("BANG!");
     }
 }
