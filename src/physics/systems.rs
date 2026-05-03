@@ -72,59 +72,6 @@ pub fn collider_collision_enter(
     }
 }
 
-pub fn collider_collision_exit(
-    mut commands: Commands,
-    mut collisions: Query<(Entity, &Transform, &Children, &mut Collision)>,
-    mut colliders: Query<(&Transform, &Shape), With<Collider>>,
-) {
-    let mut check = HashSet::new();
-    let mut pairs = Vec::new();
-
-    for (entity, _, _, collision) in collisions.iter() {
-        let other = collision.other;
-
-        if entity != other && !check.contains(&other) {
-            check.insert(entity);
-            pairs.push((entity, other));
-        }
-    }
-
-    for (a, b) in pairs {
-        if let Ok([mut a_data, mut b_data]) = collisions.get_many_mut([a, b]) {
-            let Some(collider_a) = a_data
-                .2
-                .iter()
-                .filter_map(|child| colliders.get(child).ok().map(|c| (child, c)))
-                .next()
-            else {
-                continue;
-            };
-
-            let Some(collider_b) = b_data
-                .2
-                .iter()
-                .filter_map(|child| colliders.get(child).ok().map(|c| (child, c)))
-                .next()
-            else {
-                continue;
-            };
-
-            let collider_a = build_collider(a_data.1, collider_a.1.0, collider_a.1.1);
-            let collider_b = build_collider(b_data.1, collider_b.1.0, collider_b.1.1);
-
-            if let Some((normal, depth)) = separating_axis_theorem(&collider_a, &collider_b) {
-                let direction = (collider_a.translation - collider_b.translation).normalize();
-
-                a_data.3.update(normal, depth, direction);
-                b_data.3.update(normal, depth, direction);
-            } else {
-                commands.entity(a_data.0).remove::<Collision>();
-                commands.entity(b_data.0).remove::<Collision>();
-            }
-        }
-    }
-}
-
 pub fn apply_gravity(time: Res<Time>, query: Query<(&Gravity, &mut Transform, &mut Velocity)>) {
     for (_, mut transform, mut velocity) in query {
         velocity.0 += Vec3::NEG_Y * GRAVITY * time.delta_secs();

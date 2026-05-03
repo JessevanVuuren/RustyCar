@@ -1,9 +1,7 @@
 use crate::{
     physics::{
         effects::collision_effect_response,
-        systems::{
-            apply_gravity, collider_collision_enter, collider_collision_exit, collider_debug,
-        },
+        systems::{apply_gravity, collider_collision_enter, collider_debug},
     },
     world::components::StaticWorld,
 };
@@ -24,7 +22,6 @@ impl Plugin for PhysicsPlugin {
             (
                 apply_gravity,
                 collider_collision_enter,
-                // collider_collision_exit,
                 collision_effect_response,
                 collider_debug,
             )

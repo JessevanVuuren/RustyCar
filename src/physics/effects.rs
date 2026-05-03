@@ -17,14 +17,6 @@ pub fn collision_effect_response(
             }
 
             commands.entity(entity).remove::<Collision>();
-
-            println!(
-                "{}, {}, {}, {}",
-                collision.normal,
-                velocity.0.length(),
-                vn,
-                velocity.0
-            );
         }
     }
 }
