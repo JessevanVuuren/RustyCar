@@ -9,7 +9,7 @@ use rand::{RngExt, rngs::SmallRng};
 
 use crate::{
     animal::components::{AnimalKind, AnimalModel},
-    collision::components::ModelCollider,
+    physics::components::ModelCollider,
     extra::components::{Noise, Range, Value},
     world::tile_pos::TilePos,
 };

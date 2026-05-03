@@ -3,7 +3,65 @@ use bevy::{
     prelude::*,
 };
 
-pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -> Option<(Vec3, f32)> {
+pub fn collision_box_sphere(box_a: &Transform, sphere_a: &Transform) -> Option<(Vec3, f32)> {
+    let sphere_center = sphere_a.translation;
+    let box_center = box_a.translation;
+
+    let radius = sphere_a.scale.x * 0.5;
+
+    let axis = collider_normals(box_a);
+    let extent = box_a.scale * 0.5;
+
+    let d = sphere_center - box_center;
+    let mut closest = box_center;
+
+    for i in 0..3 {
+        let dist = d.dot(axis[i]);
+        let clamped = dist.clamp(-extent[i], extent[i]);
+        closest += axis[i] * clamped;
+    }
+
+    let delta = sphere_center - closest;
+    let dist2 = delta.length_squared();
+
+    if dist2 <= radius * radius {
+        let dist = dist2.sqrt();
+
+        let normal = if dist > 0.0001 {
+            delta / dist
+        } else {
+            best_axis_inside_collider(axis, extent, d)
+        };
+
+        let depth = radius - dist;
+        return Some((normal, depth));
+    }
+
+    None
+}
+
+fn best_axis_inside_collider(axis: Vec<Vec3>, extent: Vec3, d: Vec3) -> Vec3 {
+    let mut best_axis = axis[0];
+    let mut best_dist = f32::MAX;
+
+    for i in 0..3 {
+        let dist = d.dot(axis[i]);
+
+        let separation = extent[i] - dist.abs();
+
+        if separation < best_dist {
+            best_dist = separation;
+            best_axis = if dist > 0.0 { axis[i] } else { -axis[i] };
+        }
+    }
+
+    best_axis
+}
+
+pub fn separating_axis_theorem(
+    collider_a: &Transform,
+    collider_b: &Transform,
+) -> Option<(Vec3, f32)> {
     let normals_a = collider_normals(collider_a);
     let normals_b = collider_normals(collider_b);
     let crosses = cross_of_normals(&normals_a, &normals_b);
@@ -16,8 +74,8 @@ pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -
     let points_a = transform_shape(collider_a);
     let points_b = transform_shape(collider_b);
 
-    let mut smallest = f32::MAX;
-    let mut best_axis = Vec3::ZERO;
+    let mut depth = f32::MAX;
+    let mut normal = Vec3::ZERO;
 
     for axis in axes {
         let axis = axis.normalize();
@@ -31,13 +89,13 @@ pub fn separating_axis_theorem(collider_a: &Transform, collider_b: &Transform) -
             return None;
         }
 
-        if overlap < smallest {
-            smallest = overlap;
-            best_axis = axis;
+        if overlap < depth {
+            depth = overlap;
+            normal = axis;
         }
     }
 
-    Some((best_axis, smallest))
+    Some((normal, depth))
 }
 
 pub fn cross_of_normals(normals_a: &[Vec3], normals_b: &[Vec3]) -> Vec<Vec3> {

@@ -1,11 +1,11 @@
 use std::f32::consts::{FRAC_PI_4, PI};
 
-use bevy::prelude::*;
+use bevy::{math::VectorSpace, prelude::*};
 
 use crate::{
     animal::components::{AnimalKind, AnimalModel, AnimalState, ButterflyBehavior},
-    collision::components::{ModelCollider, Shape},
     extra::components::{Noise, NoiseLevel, Range, Value},
+    physics::components::{Effect, ModelCollider, Shape},
     world::{
         components::{
             AnimalRoam, Comp, DOWN, GroundConfig, LEFT, Offset, Placement, RIGHT, Rotation,
@@ -14,6 +14,13 @@ use crate::{
         tile_pos::TilePos,
     },
 };
+
+pub fn empty_world() -> StaticWorld {
+    StaticWorld {
+        blocks: vec![],
+        animals: vec![],
+    }
+}
 
 pub fn collision_world_test() -> StaticWorld {
     let grass_start = TilePos::new(1, 1);
@@ -94,7 +101,8 @@ pub fn collision_world_test() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     placement: Placement {
                         rotation: Rotation::Amount(LEFT, Dir3::Y),
@@ -1549,7 +1557,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     ..default()
                 }]),
@@ -1570,7 +1579,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     ..default()
                 }]),
@@ -1590,7 +1600,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     placement: Placement {
                         rotation: Rotation::Amount(UP, Dir3::Y),
@@ -1614,7 +1625,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     placement: Placement {
                         rotation: Rotation::Amount(LEFT, Dir3::Y),
@@ -1638,7 +1650,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     placement: Placement {
                         rotation: Rotation::Amount(DOWN, Dir3::Y),
@@ -1659,7 +1672,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     placement: Placement {
                         rotation: Rotation::Amount(RIGHT, Dir3::Y),
@@ -1684,7 +1698,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     ..default()
                 }]),
@@ -1705,7 +1720,8 @@ pub fn test_world() -> StaticWorld {
                     collider: Some(ModelCollider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
-                        ..default()
+                        rotation: Vec3::ZERO,
+                        effect: Effect::Fixed,
                     }),
                     ..default()
                 }]),

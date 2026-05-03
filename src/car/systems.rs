@@ -10,7 +10,7 @@ use crate::{
             ROLL_MAX, ROLL_SPEED, SPEED_DAMP, STEER_ANGLE, STEER_DAMP,
         },
     },
-    collision::components::{Collider, Collision, Shape},
+    physics::components::{Collider, Collision, Shape},
 };
 
 pub fn car_input(keyboard: Res<ButtonInput<KeyCode>>, mut query: Query<&mut Car>) {

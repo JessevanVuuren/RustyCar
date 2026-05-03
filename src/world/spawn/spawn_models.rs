@@ -1,4 +1,4 @@
-use crate::{collision::utils::add_collider, world::{
+use crate::{physics::utils::add_collider, world::{
     components::{StaticWorld, TileType, TileWorld},
     utils::{
         add_component_to_entity, apply_transformations, model_path, range_from_surfaces,
