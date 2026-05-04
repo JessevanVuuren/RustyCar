@@ -49,9 +49,9 @@ const CAMERA_SPEED: f32 = 2.0;
 fn main() {
     // let static_world = multiple_surface();
 
-    // let static_world = test_world();
+    let static_world = test_world();
     // let static_world = collision_world_test();
-    let static_world = empty_world();
+    // let static_world = empty_world();
 
     // let static_world = large_grass_test();
     // let static_world = lots_of_patches();
@@ -77,19 +77,19 @@ fn main() {
             },
         ))
         .add_systems(Startup, init_rng)
-        // .add_plugins(CarPlugin)
+        .add_plugins(CarPlugin)
         .add_plugins(WorldPlugin {
             static_world: static_world.clone(),
         })
         .add_plugins(AnimalPlugin {
             static_world: static_world.clone(),
         })
-        .add_plugins(PhysicsPlugin)
+        // .add_plugins(PhysicsPlugin)
         .add_plugins(PanOrbitCameraPlugin)
         .add_systems(Startup, setup_camera)
-        .add_systems(Startup, test_spawn_physics)
+        // .add_systems(Startup, test_spawn_physics)
         .add_systems(Update, xyz_gismos)
-        // .add_systems(Startup, setup_car)
+        .add_systems(Startup, setup_car)
         .add_systems(FixedUpdate, camera_follow)
         .run();
 }
@@ -156,12 +156,12 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 fn setup_camera(mut commands: Commands) {
     // let focus = Vec3::new(0.0, 0.0, 0.0);
     // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(14.0, 0.0, 6.0);
-    let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
+    // let focus = Vec3::new(14.0, 0.0, 6.0);
+    // let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(15.0, 0.0, 15.0);
     // let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
-    // let focus = Vec3::new(60.0, 0.0, 60.0);
-    // let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(60.0, 0.0, 60.0);
+    let offset = Transform::from_xyz(90.0, 30.0, 80.0).looking_at(focus, Vec3::Y);
 
     commands.spawn((
         DirectionalLight {
