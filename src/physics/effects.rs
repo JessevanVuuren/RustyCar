@@ -7,16 +7,27 @@ pub fn collision_effect_response(
     mut query: Query<(Entity, &mut Transform, &Collision, &mut Velocity)>,
 ) {
     for (entity, mut transform, collision, mut velocity) in query {
-        if matches!(collision.effect, Effect::InverseVelocity) {
-            transform.translation += collision.normal * collision.depth;
+        if matches!(collision.effect, Effect::Fixed) {
+            continue;
+        }
 
+        transform.translation += collision.normal * (collision.depth + 0.001);
+
+        if let Effect::InverseVelocity = collision.effect {
             let vn = velocity.0.dot(collision.normal);
 
             if vn < 0.0 {
                 velocity.0 = velocity.0 - 2.0 * vn * collision.normal;
             }
+            println!("InverseVelocity: {}", velocity.0);
+        }
 
-            commands.entity(entity).remove::<Collision>();
+        if let Effect::Bounce(bounciness) = collision.effect {
+            let vn = velocity.0.dot(collision.normal);
+
+            if vn < 0.0 {
+                velocity.0 = velocity.0 - 2.0 * vn * collision.normal * bounciness;
+            }
         }
     }
 }

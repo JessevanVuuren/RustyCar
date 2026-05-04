@@ -3,6 +3,22 @@ use bevy::{
     prelude::*,
 };
 
+pub fn sphere_on_sphere(sphere_a: &Transform, sphere_b: &Transform) -> Option<(Vec3, f32)> {
+    let radius_a = sphere_a.scale.x * 0.5;
+    let radius_b = sphere_b.scale.x * 0.5;
+
+    let delta = sphere_a.translation - sphere_b.translation;
+    let dist = delta.length();
+
+    if dist <= radius_a + radius_b {
+        let normal = if dist > 0.0001 { delta / dist } else { Vec3::Y };
+        let depth = radius_a + radius_b - dist;
+        return Some((normal, depth));
+    }
+
+    None
+}
+
 pub fn collision_box_sphere(box_a: &Transform, sphere_a: &Transform) -> Option<(Vec3, f32)> {
     let sphere_center = sphere_a.translation;
     let box_center = box_a.translation;

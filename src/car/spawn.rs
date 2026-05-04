@@ -1,5 +1,5 @@
 use crate::physics::{
-    components::{Effect, ModelCollider, Shape},
+    components::{Effect, Collider, Shape},
     utils::add_collider,
 };
 
@@ -137,7 +137,7 @@ pub fn spawn_car(
         ));
     });
 
-    let collider = ModelCollider {
+    let collider = Collider {
         position: Vec3::new(0.0, 2.0680195, -0.15),
         rotation: Vec3::new(0.0, 0.0, 0.0),
         shape: Shape::Box(Vec3::new(3.926, 2.7388, 7.4441)),

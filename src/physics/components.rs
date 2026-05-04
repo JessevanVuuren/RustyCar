@@ -2,8 +2,8 @@ use bevy::{color::palettes::css::GREEN, prelude::*};
 
 use crate::{car::components::Car, physics::utils::build_collider};
 
-#[derive(Debug, Clone)]
-pub struct ModelCollider {
+#[derive(Debug, Clone, Component)]
+pub struct Collider {
     pub position: Vec3,
     pub rotation: Vec3,
     pub shape: Shape,
@@ -13,7 +13,7 @@ pub struct ModelCollider {
 #[derive(Component, Debug, Clone)]
 pub enum Effect {
     InverseVelocity,
-    Bounce,
+    Bounce(f32),
     Stop,
     Fixed,
 }
@@ -23,9 +23,6 @@ pub struct Gravity;
 
 #[derive(Component)]
 pub struct Velocity(pub Vec3);
-
-#[derive(Component)]
-pub struct Collider;
 
 #[derive(Component)]
 pub struct Collision {

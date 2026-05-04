@@ -5,7 +5,7 @@ use bevy::{math::VectorSpace, prelude::*};
 use crate::{
     animal::components::{AnimalKind, AnimalModel, AnimalState, ButterflyBehavior},
     extra::components::{Noise, NoiseLevel, Range, Value},
-    physics::components::{Effect, ModelCollider, Shape},
+    physics::components::{Effect, Collider, Shape},
     world::{
         components::{
             AnimalRoam, Comp, DOWN, GroundConfig, LEFT, Offset, Placement, RIGHT, Rotation,
@@ -98,7 +98,7 @@ pub fn collision_world_test() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         rotation: Vec3::ZERO,
@@ -1554,7 +1554,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         rotation: Vec3::ZERO,
@@ -1576,7 +1576,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         rotation: Vec3::ZERO,
@@ -1597,7 +1597,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         rotation: Vec3::ZERO,
@@ -1622,7 +1622,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 4),
                     comp: Comp::Fence,
                     path: "infra/fence".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(3.0, 3.0, 0.5)),
                         rotation: Vec3::ZERO,
@@ -1647,7 +1647,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
                         rotation: Vec3::ZERO,
@@ -1669,7 +1669,7 @@ pub fn test_world() -> StaticWorld {
                     range: Range::Range(1, 2),
                     comp: Comp::Fence,
                     path: "infra/fence_corner".into(),
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
                         rotation: Vec3::ZERO,
@@ -1695,7 +1695,7 @@ pub fn test_world() -> StaticWorld {
                         rotation: Rotation::Amount(UP, Dir3::Y),
                         ..default()
                     },
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
                         rotation: Vec3::ZERO,
@@ -1717,7 +1717,7 @@ pub fn test_world() -> StaticWorld {
                         rotation: Rotation::Amount(LEFT, Dir3::Y),
                         ..default()
                     },
-                    collider: Some(ModelCollider {
+                    collider: Some(Collider {
                         position: Vec3::new(0.0, 1.5, 0.0),
                         shape: Shape::Box(Vec3::new(1.0, 3.0, 1.0)),
                         rotation: Vec3::ZERO,

@@ -101,38 +101,79 @@ fn test_spawn_physics(
     commands.spawn((
         Gravity,
         Velocity(Vec3::ZERO),
-        Transform::from_xyz(8.0, 6.0, 8.0),
+        Transform::from_xyz(0.0, 6.0, 0.0),
         Mesh3d(meshes.add(Sphere::new(0.3))),
         MeshMaterial3d(materials.add(Color::Srgba(BLUE))),
-        children![(
-            Collider,
-            Transform::IDENTITY,
-            Effect::InverseVelocity,
-            // Shape::Box(Vec3::new(0.6, 0.6, 0.6)),
-            Shape::Sphere(0.6),
-        )],
+        Collider {
+            effect: Effect::InverseVelocity,
+            shape: Shape::Sphere(0.6),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
     ));
 
     commands.spawn((
-        Transform::from_xyz(8.0, 1.8, 8.0).with_rotation(Quat::from_rotation_z(-FRAC_PI_4)),
-        // Transform::from_xyz(8.0, 1.8, 8.0),
-        children![(
-            Collider,
-            Effect::Fixed,
-            Transform::IDENTITY,
-            Shape::Box(Vec3::new(12.0, 1.0, 3.0)),
-        )],
+        Gravity,
+        Velocity(Vec3::ZERO),
+        Transform::from_xyz(15.0, 2.0, 15.0),
+        Mesh3d(meshes.add(Sphere::new(0.3))),
+        MeshMaterial3d(materials.add(Color::Srgba(BLUE))),
+        Collider {
+            effect: Effect::InverseVelocity,
+            shape: Shape::Sphere(0.6),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
     ));
 
     commands.spawn((
-        Transform::from_xyz(17.3, 1.8, 8.0).with_rotation(Quat::from_rotation_z(FRAC_PI_4)),
-        // Transform::from_xyz(8.0, 1.8, 8.0),
-        children![(
-            Collider,
-            Effect::Fixed,
-            Transform::IDENTITY,
-            Shape::Box(Vec3::new(12.0, 1.0, 3.0)),
-        )],
+        Gravity,
+        Velocity(Vec3::ZERO),
+        Transform::from_xyz(22.0, 8.0, 22.0),
+        Mesh3d(meshes.add(Sphere::new(0.3))),
+        MeshMaterial3d(materials.add(Color::Srgba(BLUE))),
+        Collider {
+            effect: Effect::InverseVelocity,
+            shape: Shape::Sphere(0.6),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
+    ));
+
+    commands.spawn((
+        Gravity,
+        Velocity(Vec3::ZERO),
+        Transform::from_xyz(15.0, 8.0, 22.0),
+        Mesh3d(meshes.add(Sphere::new(0.3))),
+        MeshMaterial3d(materials.add(Color::Srgba(BLUE))),
+        Collider {
+            effect: Effect::Bounce(0.9),
+            shape: Shape::Sphere(0.6),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
+    ));
+
+    commands.spawn((
+        // Transform::from_xyz(8.0, 1.8, 8.0).with_rotation(Quat::from_rotation_z(-FRAC_PI_4)),
+        Transform::from_xyz(0.0, 0.0, 0.0),
+        Collider {
+            effect: Effect::Fixed,
+            shape: Shape::Box(Vec3::new(1.0, 0.1, 1.0)),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
+    ));
+
+    commands.spawn((
+        // Transform::from_xyz(17.3, 1.8, 8.0).with_rotation(Quat::from_rotation_z(FRAC_PI_4)),
+        Transform::from_xyz(18.0, 0.0, 18.0),
+        Collider {
+            effect: Effect::Fixed,
+            shape: Shape::Box(Vec3::new(10.0, 1.0, 10.0)),
+            rotation: Vec3::ZERO,
+            position: Vec3::ZERO,
+        },
     ));
 }
 
@@ -154,10 +195,10 @@ fn xyz_gismos(mut gizmos: Gizmos) {
 }
 
 fn setup_camera(mut commands: Commands) {
-    // let focus = Vec3::new(0.0, 0.0, 0.0);
-    // let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
-    let focus = Vec3::new(14.0, 0.0, 6.0);
-    let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
+    let focus = Vec3::new(0.0, 0.0, 0.0);
+    let offset = Transform::from_xyz(20.0, 30.0, 40.0).looking_at(focus, Vec3::Y);
+    // let focus = Vec3::new(14.0, 0.0, 6.0);
+    // let offset = Transform::from_xyz(27.0, 10.0, 23.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(15.0, 0.0, 15.0);
     // let offset = Transform::from_xyz(40.0, 20.0, 40.0).looking_at(focus, Vec3::Y);
     // let focus = Vec3::new(60.0, 0.0, 60.0);

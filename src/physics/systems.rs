@@ -8,29 +8,25 @@ use bevy::{
 use crate::{
     extra::utils::comma_print,
     physics::{
-        components::{Collider, Collision, Effect, Gravity, ModelCollider, Shape, Velocity},
-        theorem::{collision_box_sphere, separating_axis_theorem},
-        utils::{build_collider, build_colliders},
+        components::{Collider, Collision, Effect, Gravity, Shape, Velocity},
+        theorem::{collision_box_sphere, separating_axis_theorem, sphere_on_sphere},
+        utils::build_collider,
     },
     world::components::StaticWorld,
 };
 
 const GRAVITY: f32 = 9.81;
 
-pub fn collider_debug(
-    mut gizmos: Gizmos,
-    collider_query: Query<(Entity, &Transform)>,
-    query: Query<(&Transform, &Shape, &ChildOf, &Effect), With<Collider>>,
-) {
-    let colliders = build_colliders(collider_query, query);
+pub fn collider_debug(mut gizmos: Gizmos, query: Query<(&Transform, &Collider)>) {
+    for (transform, collider) in query {
+        let ct = build_collider(*transform, &collider.shape);
 
-    for (_, collider, _, shape) in colliders {
-        match shape {
+        match collider.shape {
             Shape::Sphere(_) => {
-                gizmos.sphere(collider.to_isometry(), collider.scale.x * 0.5, RED);
+                gizmos.sphere(ct.to_isometry(), ct.scale.x * 0.5, RED);
             }
             Shape::Box(_) => {
-                gizmos.cube(collider, RED);
+                gizmos.cube(ct, RED);
             }
         }
     }
@@ -39,34 +35,91 @@ pub fn collider_debug(
 pub fn collider_collision_enter(
     mut gizmos: Gizmos,
     mut commands: Commands,
-    collider_query: Query<(Entity, &Transform)>,
-    query: Query<(&Transform, &Shape, &ChildOf, &Effect), With<Collider>>,
+    query: Query<(Entity, &Transform, &Collider)>,
 ) {
-    let colliders = build_colliders(collider_query, query);
+    let colliders: Vec<_> = query.iter().collect();
 
-    let amount = colliders.len();
-    for index_a in 0..amount {
-        for index_b in (index_a + 1)..amount {
-            let (entity_a, collider_a, effect_a, shape_a) = &colliders[index_a];
-            let (entity_b, collider_b, effect_b, shape_b) = &colliders[index_b];
+    for index_a in 0..colliders.len() {
+        for index_b in (index_a + 1)..colliders.len() {
+            let (entity_a, transform_a, collider_a) = colliders[index_a];
+            let (entity_b, transform_b, collider_b) = colliders[index_b];
 
-            let collision = match (shape_a, shape_b) {
-                (Shape::Sphere(_), Shape::Sphere(_)) => todo!("Sphere on sphere collision"),
-                (Shape::Sphere(_), Shape::Box(_)) => collision_box_sphere(collider_b, collider_a),
-                (Shape::Box(_), Shape::Sphere(_)) => collision_box_sphere(collider_a, collider_b),
-                (Shape::Box(_), Shape::Box(_)) => separating_axis_theorem(&collider_a, &collider_b),
+            let collider_a = collider_a.clone();
+            let collider_b = collider_b.clone();
+
+            if matches!(collider_a.effect, Effect::Fixed)
+                && matches!(collider_b.effect, Effect::Fixed)
+            {
+                continue;
+            }
+
+            let box_a = &build_collider(*transform_a, &collider_a.shape);
+            let box_b = &build_collider(*transform_b, &collider_b.shape);
+
+            let collision = match (collider_a.shape, collider_b.shape) {
+                (Shape::Sphere(_), Shape::Sphere(_)) => sphere_on_sphere(box_a, box_b),
+                (Shape::Sphere(_), Shape::Box(_)) => collision_box_sphere(box_b, box_a),
+                (Shape::Box(_), Shape::Sphere(_)) => collision_box_sphere(box_a, box_b),
+                (Shape::Box(_), Shape::Box(_)) => separating_axis_theorem(box_a, box_b),
             };
 
             if let Some((normal, depth)) = collision {
-                let direction = (collider_a.translation - collider_b.translation).normalize();
+                let direction = (box_a.translation - box_b.translation).normalize();
 
                 let collision_a =
-                    Collision::new(normal, depth, direction, *entity_b, effect_a.clone());
+                    Collision::new(normal, depth, direction, entity_b, collider_a.effect);
                 let collision_b =
-                    Collision::new(normal, depth, direction, *entity_a, effect_b.clone());
+                    Collision::new(normal, depth, direction, entity_a, collider_b.effect);
 
-                commands.entity(*entity_a).insert(collision_a);
-                commands.entity(*entity_b).insert(collision_b);
+                commands.entity(entity_a).insert(collision_a);
+                commands.entity(entity_b).insert(collision_b);
+            }
+        }
+    }
+}
+
+pub fn current_collisions_depth(
+    mut commands: Commands,
+    mut query: Query<(Entity, &Transform, &Collider, &mut Collision)>,
+) {
+    let mut check = HashSet::new();
+    let mut pairs = Vec::new();
+
+    for (entity, _, _, collision) in query.iter() {
+        let other = collision.other;
+
+        if entity != other && !check.contains(&other) {
+            check.insert(entity);
+            pairs.push((entity, other));
+        }
+    }
+
+    for (a, b) in pairs {
+        if let Ok([mut a_data, mut b_data]) = query.get_many_mut([a, b]) {
+            let (entity_a, transform_a, collider_a, _) = a_data;
+            let (entity_b, transform_b, collider_b, _) = b_data;
+
+            let collider_a = collider_a.clone();
+            let collider_b = collider_b.clone();
+
+            let box_a = &build_collider(*transform_a, &collider_a.shape);
+            let box_b = &build_collider(*transform_b, &collider_b.shape);
+
+            let collision = match (collider_a.shape, collider_b.shape) {
+                (Shape::Sphere(_), Shape::Sphere(_)) => sphere_on_sphere(box_a, box_b),
+                (Shape::Sphere(_), Shape::Box(_)) => collision_box_sphere(box_b, box_a),
+                (Shape::Box(_), Shape::Sphere(_)) => collision_box_sphere(box_a, box_b),
+                (Shape::Box(_), Shape::Box(_)) => separating_axis_theorem(box_a, box_b),
+            };
+
+            if let Some((normal, depth)) = collision {
+                let direction = (box_a.translation - box_b.translation).normalize();
+
+                a_data.3.update(normal, depth, direction);
+                b_data.3.update(normal, depth, direction);
+            } else {
+                commands.entity(a_data.0).remove::<Collision>();
+                commands.entity(b_data.0).remove::<Collision>();
             }
         }
     }
